@@ -1,0 +1,22 @@
+** crates to use
+- https://crates.io/crates/scraper - HTML parsing and querying with CSS selectors
+- https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
+*** robots.txt
+
+Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
+robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][RFC 9309]] and seems to be very "unrusty"
+(much mutable global state). After all it's a simple transliteration from C++.
+
+- [[https://crates.io/crates/texting_robots][texting_robots]]
+  - forked by Spire-rs' [[https://github.com/spire-rs/kit/tree/main/exclusion][kit/exclusion]]
+- [[https://crates.io/crates/robotparser][robotparser-rs]]
+  - forked by [[https://github.com/spider-rs/spider/blob/4cded306fb34e32f6806998cbf28e8558ceaeb13/spider/src/packages/robotparser/parser.rs][spider]]
+- [[https://crates.io/crates/robots_txt][robots_txt]] - unstabke, WIP, +4y
+
+** compiling with openssl on Debian
+
+https://github.com/sfackler/rust-openssl/issues/2333
+
+
+sudo ln -s /usr/include/x86_64-linux-gnu/openssl/opensslconf.h /usr/include/openssl/opensslconf.h
+sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/openssl/configuration.h

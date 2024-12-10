@@ -1,0 +1,8 @@
+[package]
+name = "lara"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
+reqwest = { version = "*" }
