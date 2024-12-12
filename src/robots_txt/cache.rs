@@ -3,13 +3,24 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
+// TODO: This Cache needs code to expire old entries
+
 /// Compare RFC 9309, section "2.3.1. Access Results"
 pub enum AccessResult<T> {
     /// HTTP 400-499 range
     Unavailable,
     /// HTTP 500-599 range
-    Unreachable,
-    Ok(T),
+    Unreachable(SystemTime),
+    Ok(Rc<T>),
+}
+
+impl<T> Clone for AccessResult<T> {
+    fn clone(&self) -> AccessResult<T> {
+        match self {
+            AccessResult::Ok(rc) => AccessResult::Ok(Rc::clone(rc)),
+            _ => self.clone(),
+        }
+    }
 }
 
 /// Cache entry
@@ -44,12 +55,11 @@ impl<T> Cache<T> {
         self.handle.lock().unwrap().get(authority).map(Rc::clone)
     }
 
-    pub fn insert_clone(&self, authority: &str, ar: AccessResult<T>) -> Rc<Entry<T>> {
+    pub fn insert(&self, authority: &str, ar: AccessResult<T>) {
         let entry = Rc::new(Entry::create_with_now(ar));
         self.handle
             .lock()
             .unwrap()
             .insert(authority.to_string(), Rc::clone(&entry));
-        entry
     }
 }

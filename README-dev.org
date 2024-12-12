@@ -17,6 +17,13 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 
 https://github.com/sfackler/rust-openssl/issues/2333
 
-
+sudo apt install libc6-dev libssl-dev
 sudo ln -s /usr/include/x86_64-linux-gnu/openssl/opensslconf.h /usr/include/openssl/opensslconf.h
 sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/openssl/configuration.h
+
+** interesting stuff
+
+*** crates
+- https://crates.io/crates/fetcher Automatic news fetching and parsing
+- https://crates.io/crates/httptest HTTP testing facilities including a mock server
+- https://github.com/lipanski/mockito HTTP mocking for Rust! https://zupzup.org/rust-http-testing/
