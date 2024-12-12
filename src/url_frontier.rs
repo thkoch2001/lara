@@ -6,6 +6,7 @@ pub trait UrlFrontier {
     fn put_url(&mut self, url: Url);
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct UrlFrontierVec {
     urls: Vec<Url>,
 }
