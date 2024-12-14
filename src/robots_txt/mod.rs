@@ -28,7 +28,7 @@ impl Manager {
         }
     }
 
-    pub async fn check(&self, url: &Url) -> Result<CheckResult> {
+    pub async fn check(&mut self, url: &Url) -> Result<CheckResult> {
         let ar = self.get_or_fetch(url).await?;
 
         Ok(match ar {
@@ -44,7 +44,7 @@ impl Manager {
         })
     }
 
-    async fn get_or_fetch(&self, url: &Url) -> Result<AR<Robot>> {
+    async fn get_or_fetch(&mut self, url: &Url) -> Result<AR<Robot>> {
         let authority = url.authority();
 
         let mut unreachable_first_tried: Option<SystemTime> = None;
@@ -81,12 +81,14 @@ impl Manager {
             _ => AR::Unreachable(unreachable_first_tried.unwrap_or(SystemTime::now())),
         };
 
-        self.cache.insert(authority, ar.clone());
+        self.cache.insert(authority, ar.clone(), SystemTime::now());
         Ok(ar)
     }
 }
 
+const HALF_DAY: u64 = 12 * 60 * 60;
 const ONE_DAY: u64 = 24 * 60 * 60;
+const TWO_DAYS: u64 = 2 * ONE_DAY;
 
 fn elapsed(since: &SystemTime, seconds: u64) -> bool {
     let duration = since.elapsed().unwrap_or(Duration::from_secs(1));

@@ -14,7 +14,7 @@ use url_frontier::{UrlFrontier, UrlFrontierVec};
 const BOTNAME: &str = "larabot";
 
 async fn crawl(mut url_frontier: impl UrlFrontier) -> Result<()> {
-    let robots_txt_manager = robots_txt::Manager::new(BOTNAME);
+    let mut robots_txt_manager = robots_txt::Manager::new(BOTNAME);
     while let Some(url) = url_frontier.get_url() {
         match robots_txt_manager.check(&url).await? {
             CheckResult::Allowed => (),
