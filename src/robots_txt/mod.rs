@@ -23,7 +23,7 @@ pub enum CheckResult {
 impl Manager {
     pub fn new(bot_name: &str) -> Manager {
         Self {
-            cache: Cache::<Robot>::new(),
+            cache: Cache::<Robot>::new(SystemTime::now()),
             bot_name: String::from(bot_name),
         }
     }
@@ -52,13 +52,13 @@ impl Manager {
             let ar = &r.ar;
             let updated = r.updated;
             match ar {
-                AR::Unavailable | AR::Ok(_) if !elapsed(&updated, ONE_DAY) => return Ok(ar.clone()),
+                AR::Unavailable | AR::Ok(_) if !elapsed(updated, ONE_DAY) => return Ok(ar.clone()),
                 AR::Unreachable(first_tried) => {
                     // TODO: replace with exponential backoff
-                    if !elapsed(&updated, ONE_DAY) {
+                    if !elapsed(updated, ONE_DAY) {
                         return Ok(ar.clone());
                     }
-                    if elapsed(&updated, 30 * ONE_DAY) {
+                    if elapsed(updated, 30 * ONE_DAY) {
                         return Ok(AR::Unavailable);
                     }
                     unreachable_first_tried = Some(*first_tried);
@@ -90,7 +90,7 @@ const HALF_DAY: u64 = 12 * 60 * 60;
 const ONE_DAY: u64 = 24 * 60 * 60;
 const TWO_DAYS: u64 = 2 * ONE_DAY;
 
-fn elapsed(since: &SystemTime, seconds: u64) -> bool {
+fn elapsed(since: SystemTime, seconds: u64) -> bool {
     let duration = since.elapsed().unwrap_or(Duration::from_secs(1));
     duration.as_secs() > seconds
 }

@@ -3,6 +3,11 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
+#[cfg(test)]
+use assertables::*;
+#[cfg(test)]
+use proptest::prelude::*;
+
 /// Compare RFC 9309, section "2.3.1. Access Results"
 pub enum AccessResult<T> {
     /// HTTP 400-499 range
@@ -35,10 +40,10 @@ pub struct Cache<T> {
 }
 
 impl<T> Cache<T> {
-    pub fn new() -> Self {
+    pub fn new(now: SystemTime) -> Self {
         Self {
             handle: Arc::new(Mutex::new(HashMap::new())),
-            last_time_shrinked: SystemTime::now(),
+            last_time_shrinked: now,
         }
     }
 
@@ -51,12 +56,12 @@ impl<T> Cache<T> {
         let cachesize = map.len();
 
         if cachesize > 100
-            || (cachesize > 10 && super::elapsed(&self.last_time_shrinked, super::TWO_DAYS))
+            || (cachesize > 10 && super::elapsed(self.last_time_shrinked, super::TWO_DAYS))
         {
             self.last_time_shrinked = now;
             let mut delete_older = super::HALF_DAY;
             loop {
-                map.retain(|_, v| !super::elapsed(&v.updated, delete_older));
+                map.retain(|_, v| !super::elapsed(v.updated, delete_older));
                 if map.len() < cachesize {
                     break;
                 }
@@ -65,5 +70,43 @@ impl<T> Cache<T> {
         }
         let entry = Rc::new(Entry { ar, updated: now });
         map.insert(authority.to_string(), Rc::clone(&entry));
+    }
+
+    #[cfg(test)]
+    fn len(&self) -> usize {
+        self.handle.lock().unwrap().len()
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig {
+        max_shrink_iters: 20,
+        cases: 100,
+        .. ProptestConfig::default()
+    })]
+    #[test]
+    fn test_insert(inserts in proptest::collection::vec(("\\PC*", any::<u8>()), 50..300)) {
+        let mut now = SystemTime::UNIX_EPOCH;
+        let mut cache: Cache<()> = Cache::new(now);
+        let mut len_before = cache.len();
+
+        assert_eq!(len_before, 0);
+
+        for (authority, delay) in inserts {
+            let duration = std::time::Duration::from_secs(3000 * u64::from(delay));
+            now = now.checked_add(duration).unwrap();
+            cache.insert(authority.as_str(), AccessResult::Unavailable, now);
+            assert_eq!(
+                cache.get(authority.as_str()).unwrap().updated,
+                now
+            );
+            assert_le!(cache.len(), 100);
+            assert_le!(cache.len(), len_before + 1);
+            // cache length could have remained constant in case of already existing key
+            if cache.len() < len_before {
+                assert_eq!(cache.last_time_shrinked, now);
+            }
+            len_before = cache.len();
+        }
     }
 }

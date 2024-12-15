@@ -27,3 +27,5 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/fetcher Automatic news fetching and parsing
 - https://crates.io/crates/httptest HTTP testing facilities including a mock server
 - https://github.com/lipanski/mockito HTTP mocking for Rust! https://zupzup.org/rust-http-testing/
+- https://crates.io/crates/tempfile
+- https://crates.io/crates/pretty_assertions
