@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "*"
 tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
-reqwest = { version = "*" }
+reqwest = { version = "*", features = ["gzip"] }
 log = "*"
 env_logger = "*"
 texting_robots = "*"

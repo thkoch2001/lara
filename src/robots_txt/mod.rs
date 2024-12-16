@@ -6,6 +6,7 @@ use reqwest::Url;
 use std::rc::Rc;
 use std::time::{Duration, SystemTime};
 use texting_robots::Robot;
+use crate::Fetcher;
 
 pub struct Manager {
     cache: Cache<Robot>,
@@ -28,8 +29,8 @@ impl Manager {
         }
     }
 
-    pub async fn check(&mut self, url: &Url) -> Result<CheckResult> {
-        let ar = self.get_or_fetch(url).await?;
+    pub async fn check(&mut self, url: &Url, fetcher: &Fetcher) -> Result<CheckResult> {
+        let ar = self.get_or_fetch(url, fetcher).await?;
 
         Ok(match ar {
             AR::Unavailable => CheckResult::Allowed,
@@ -44,7 +45,7 @@ impl Manager {
         })
     }
 
-    async fn get_or_fetch(&mut self, url: &Url) -> Result<AR<Robot>> {
+    async fn get_or_fetch(&mut self, url: &Url, fetcher: &Fetcher) -> Result<AR<Robot>> {
         let authority = url.authority();
 
         let mut unreachable_first_tried: Option<SystemTime> = None;
@@ -68,9 +69,9 @@ impl Manager {
         }
 
         let scheme = url.scheme();
-        let robots_url = format!("{scheme}://{authority}/robots.txt");
+        let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
         info!("Fetching {robots_url}");
-        let response = reqwest::get(robots_url).await?;
+        let response = fetcher.fetch(robots_url).await?;
         let ar = match response.status().as_u16() {
             400..=499 => AR::Unavailable,
             200 => {

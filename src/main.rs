@@ -3,10 +3,12 @@
 #[macro_use]
 extern crate log;
 
+mod fetcher;
 mod robots_txt;
 mod url_frontier;
 
 use anyhow::Result;
+use fetcher::Fetcher;
 use reqwest::{/*Error, */ Url};
 use robots_txt::CheckResult;
 use url_frontier::{UrlFrontier, UrlFrontierVec};
@@ -14,9 +16,11 @@ use url_frontier::{UrlFrontier, UrlFrontierVec};
 const BOTNAME: &str = "larabot";
 
 async fn crawl(mut url_frontier: impl UrlFrontier) -> Result<()> {
-    let mut robots_txt_manager = robots_txt::Manager::new(BOTNAME);
+    let fetcher = Fetcher::new(String::from(BOTNAME));
+    let mut robots_txt_manager = robots_txt::Manager::new(BOTNAME.as_ref());
+
     while let Some(url) = url_frontier.get_url() {
-        match robots_txt_manager.check(&url).await? {
+        match robots_txt_manager.check(&url, &fetcher).await? {
             CheckResult::Allowed => (),
             CheckResult::Disallowed => {
                 info!("Crawling of {url} forbidden by robots.txt");
@@ -30,7 +34,7 @@ async fn crawl(mut url_frontier: impl UrlFrontier) -> Result<()> {
         }
 
         info!("Crawling {url}");
-        let response = reqwest::get(url.clone()).await?;
+        let response = fetcher.fetch(url.clone()).await?;
         info!("Status: {} for {url}", response.status());
 
         let body = response.text().await?;

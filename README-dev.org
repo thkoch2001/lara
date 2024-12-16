@@ -1,6 +1,7 @@
 ** crates to use
 - https://crates.io/crates/scraper - HTML parsing and querying with CSS selectors
 - https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
+- https://github.com/utkarshkukreti/select.rs - extract data from HTML
 *** robots.txt
 
 Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
@@ -23,9 +24,30 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 
 ** interesting stuff
 
+- [[https://brave.com/static-assets/files/goggles.pdf][GOGGLES: Democracy dies in darkness, and so does the Web]] paper by Brave Search Team, via Spyglass
+  - https://videos.cern.ch/record/2295289
+  - https://www.afaik.de/nona-werbefreie-suchmaschine-aus-deutschland/
+- https://github.com/spyglass-search
+- https://github.com/iipc - International Internet Preservation Consortium
+  - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
+
 *** crates
 - https://crates.io/crates/fetcher Automatic news fetching and parsing
 - https://crates.io/crates/httptest HTTP testing facilities including a mock server
 - https://github.com/lipanski/mockito HTTP mocking for Rust! https://zupzup.org/rust-http-testing/
 - https://crates.io/crates/tempfile
 - https://crates.io/crates/pretty_assertions
+- https://crates.io/crates/nonzero
+- https://crates.io/crates/webpage
+- https://crates.io/crates/warc
+- https://crates.io/crates/feedfinder Auto-discovery of feeds in HTML content
+- https://crates.io/crates/governor - A rate-limiting implementation in Rust
+- https://crates.io/crates/thiserror
+- https://crates.io/crates/tracing
+
+*** HTML content / article extraction
+
+- https://github.com/grangier/python-goose
+- https://pkg.go.dev/github.com/thatguystone/swan
+- https://crates.io/crates/extrablatt
+- https://crates.io/crates/mozilla-readability

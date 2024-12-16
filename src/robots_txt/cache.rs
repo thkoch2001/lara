@@ -78,6 +78,7 @@ impl<T> Cache<T> {
     }
 }
 
+#[cfg(test)]
 proptest! {
     #![proptest_config(ProptestConfig {
         max_shrink_iters: 20,
