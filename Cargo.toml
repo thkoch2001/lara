@@ -5,11 +5,12 @@ edition = "2021"
 
 [dependencies]
 anyhow = "*"
-tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
-reqwest = { version = "*", features = ["gzip"] }
-log = "*"
 env_logger = "*"
+log = "*"
+reqwest = { version = "*", features = ["gzip"] }
+select = "*"
 texting_robots = "*"
+tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
 
 [dev-dependencies]
 assertables = "*"

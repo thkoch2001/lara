@@ -1,12 +1,12 @@
 mod cache;
 
+use crate::Fetcher;
 use anyhow::Result;
 use cache::{AccessResult as AR, Cache};
 use reqwest::Url;
 use std::rc::Rc;
 use std::time::{Duration, SystemTime};
 use texting_robots::Robot;
-use crate::Fetcher;
 
 pub struct Manager {
     cache: Cache<Robot>,
@@ -72,6 +72,8 @@ impl Manager {
         let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
         info!("Fetching {robots_url}");
         let response = fetcher.fetch(robots_url).await?;
+        debug!("Done Fetching robots.txt with status {}", response.status());
+        // TODO: don't call SystemTime::now() twice. Reuse time from future FetchResult!
         let ar = match response.status().as_u16() {
             400..=499 => AR::Unavailable,
             200 => {
