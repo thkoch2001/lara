@@ -12,7 +12,8 @@ use fetcher::Fetcher;
 use reqwest::{/*Error, */ Url};
 use robots_txt::CheckResult;
 use select::document::Document;
-use select::predicate::{Attr, Class, Name, Predicate};
+use select::predicate::{Attr, Name, Predicate};
+use url::ParseError;
 use url_frontier::{UrlFrontier, UrlFrontierVec};
 
 const BOTNAME: &str = "larabot";
@@ -41,15 +42,39 @@ async fn crawl(mut url_frontier: impl UrlFrontier) -> Result<()> {
 
         let body = response.text().await?;
         let document = Document::from(body.as_ref());
-        for node in document.find(Name("a")) {
-            println!(
-                "{} ({:?})",
-                node.text(),
-                node.attr("href").unwrap_or("<NO HREF>")
-            );
+        let outlinks = find_outlinks(&document, &url);
+        for outlink in outlinks {
+            url_frontier.put_url(outlink.url);
         }
     }
     Ok(())
+}
+
+struct Outlink {
+    url: Url,
+}
+
+fn find_outlinks(document: &Document, base: &Url) -> Vec<Outlink> {
+    let a_nodes = document.find(Name("a").and(Attr("href", ())));
+
+    let mut outlinks: Vec<Outlink> = Vec::new();
+    for node in a_nodes {
+        // We already filtered for a nodes with href attribute
+        let href = node.attr("href").unwrap();
+
+        match Url::parse(href) {
+            Ok(url) if url.scheme() == "http" || url.scheme() == "https" => {
+                outlinks.push(Outlink { url });
+            }
+            Ok(_) => (),
+            Err(ParseError::RelativeUrlWithoutBase) => match base.join(href) {
+                Ok(url) => outlinks.push(Outlink { url }),
+                Err(err) => debug!("{:?}: {href}", err),
+            },
+            Err(err) => debug!("{:?}: {href}", err),
+        }
+    }
+    outlinks
 }
 
 #[tokio::main]
