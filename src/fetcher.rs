@@ -1,10 +1,14 @@
-// This code was written with lines copied from https://github.com/spyglass-search/netrunner/blob/main/src/lib/crawler.rs
-
-use reqwest::{Client, Response, /*StatusCode, */ Url};
-use std::time::Duration;
+use reqwest::{Client, Error, Response, Url};
+use std::time::{Duration, Instant, SystemTime};
 
 pub struct Fetcher {
     client: Client,
+}
+
+pub struct FetchResult {
+    pub duration_ms: u128,
+    pub result: Result<Response, Error>,
+    pub start: SystemTime,
 }
 
 impl Fetcher {
@@ -20,14 +24,29 @@ impl Fetcher {
         Fetcher { client }
     }
 
-    pub async fn fetch(&self, url: Url) -> anyhow::Result<Response, reqwest::Error> {
-        info!("Fetching {url}");
+    pub async fn fetch(&self, url: Url) -> FetchResult {
+        debug!("Fetching {url}");
+        let start_systemtime = SystemTime::now();
+        let start_instant = Instant::now();
         let result = self.client.get(url.clone()).send().await;
-        if let Err(err) = result {
-            log::warn!("Unable to fetch [{:?}] {} - {}", err.status(), url, err);
-            //return Err(FetchError::RequestError(err))
-            return Err(err);
+        let duration = start_instant.elapsed();
+        let duration_ms = duration.as_millis().into();
+
+        match result {
+            Err(ref err) => {
+                debug!("Unable to fetch [{:?}] {url} - {err}", err.status());
+                // maybe FetchError?
+                // https://github.com/spyglass-search/netrunner/blob/main/src/lib/crawler.rs
+                //return Err(FetchError::RequestError(err))
+            }
+            Ok(ref response) => {
+                debug!("fetched with status {} in {duration_ms} ms: {url}", response.status());
+            }
+        };
+        FetchResult {
+            duration_ms,
+            result,
+            start: start_systemtime,
         }
-        Ok(result.unwrap())
     }
 }

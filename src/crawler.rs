@@ -62,12 +62,13 @@ impl Crawler {
                 }
             }
 
-            let response = self.fetcher.fetch(url.clone()).await?;
-            let body = response.text().await?;
-            let document = Document::from(body.as_ref());
-            let outlinks = find_outlinks(&document, &url);
-            for outlink in outlinks {
-                if urls_from_sitemaps_count == 0 {
+            let fetchresult = self.fetcher.fetch(url.clone()).await;
+            let body = fetchresult.result?.text().await?;
+
+            if urls_from_sitemaps_count == 0 {
+                let document = Document::from(body.as_ref());
+                let outlinks = find_outlinks(&document, &url);
+                for outlink in outlinks {
                     self.url_frontier.put_url(outlink.url);
                 }
             }
@@ -136,9 +137,9 @@ impl Crawler {
 
         let scheme = url.scheme();
         let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
-        let response = self.fetcher.fetch(robots_url).await?;
-        debug!("Done Fetching robots.txt with status {}", response.status());
-        // TODO: don't call SystemTime::now() twice. Reuse time from future FetchResult!
+        let fetchresult = self.fetcher.fetch(robots_url).await;
+        let response = fetchresult.result?;
+
         let ar = match response.status().as_u16() {
             400..=499 => AR::Unavailable,
             200 => {
@@ -146,11 +147,11 @@ impl Crawler {
                 let robot = Robot::new(&self.bot_name, body.as_bytes());
                 AR::Ok(Rc::new(robot.unwrap()))
             }
-            _ => AR::Unreachable(unreachable_first_tried.unwrap_or(SystemTime::now())),
+            _ => AR::Unreachable(unreachable_first_tried.unwrap_or(fetchresult.start)),
         };
 
         self.robotstxt_cache
-            .insert(authority, ar.clone(), SystemTime::now());
+            .insert(authority, ar.clone(), fetchresult.start);
         Ok(ar)
     }
 }

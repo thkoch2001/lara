@@ -17,7 +17,7 @@ pub async fn run(url: Url, sitemap_urls: &mut Vec<Url>, fetcher: &Fetcher, url_f
 
     // TODO protect against infinite loops
     while sitemap_urls.len() > 0 {
-        match fetcher.fetch(sitemap_urls.pop().expect("len>0")).await {
+        match fetcher.fetch(sitemap_urls.pop().expect("len>0")).await.result {
             Err(err) => debug!("{:?}", err),
             Ok(response) => {
                 let body = response.text().await?;
