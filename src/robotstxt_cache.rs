@@ -1,3 +1,5 @@
+use crate::clock;
+
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -54,12 +56,12 @@ impl<T> Cache<T> {
         let cachesize = map.len();
 
         if cachesize > 100
-            || (cachesize > 10 && super::elapsed(self.last_time_shrinked, super::TWO_DAYS))
+            || (cachesize > 10 && clock::elapsed(self.last_time_shrinked, clock::TWO_DAYS))
         {
             self.last_time_shrinked = now;
-            let mut delete_older = super::HALF_DAY;
+            let mut delete_older = clock::HALF_DAY;
             loop {
-                map.retain(|_, v| !super::elapsed(v.updated, delete_older));
+                map.retain(|_, v| !clock::elapsed(v.updated, delete_older));
                 if map.len() < cachesize {
                     break;
                 }

@@ -1,8 +1,10 @@
+TODO: https://doc.rust-lang.org/rustdoc/
+
 ** crates to use
 - https://crates.io/crates/scraper - HTML parsing and querying with CSS selectors
 - https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
 - https://github.com/utkarshkukreti/select.rs - extract data from HTML
-*** robots.txt
+** robots.txt
 
 Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
 robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][RFC 9309]] and seems to be very "unrusty"
@@ -13,6 +15,20 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - [[https://crates.io/crates/robotparser][robotparser-rs]]
   - forked by [[https://github.com/spider-rs/spider/blob/4cded306fb34e32f6806998cbf28e8558ceaeb13/spider/src/packages/robotparser/parser.rs][spider]]
 - [[https://crates.io/crates/robots_txt][robots_txt]] - unstabke, WIP, +4y
+
+** sitemaps
+
+- https://developers.google.com/search/docs/crawling-indexing/sitemaps
+- https://sitemaps.org
+- https://en.m.wikipedia.org/wiki/Sitemaps
+
+*** Crates
+
+- https://crates.io/crates/sitemap old but 8 dependents
+- https://crates.io/crates/sitemap-iter (2022-02)
+- https://crates.io/crates/sitemaps (2024-06)
+- https://crates.io/crates/wls - check for ideas
+- https://crates.io/crates/sitemapo (2023-07), dead repo
 
 ** compiling with openssl on Debian
 
@@ -43,7 +59,7 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/feedfinder Auto-discovery of feeds in HTML content
 - https://crates.io/crates/governor - A rate-limiting implementation in Rust
 - https://crates.io/crates/thiserror
-- https://crates.io/crates/tracing
+- https://crates.io/crates/tracing https://gist.github.com/oliverdaff/d1d5e5bc1baba087b768b89ff82dc3ec
 
 *** HTML content / article extraction
 

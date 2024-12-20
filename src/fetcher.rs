@@ -21,6 +21,7 @@ impl Fetcher {
     }
 
     pub async fn fetch(&self, url: Url) -> anyhow::Result<Response, reqwest::Error> {
+        info!("Fetching {url}");
         let result = self.client.get(url.clone()).send().await;
         if let Err(err) = result {
             log::warn!("Unable to fetch [{:?}] {} - {}", err.status(), url, err);

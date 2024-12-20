@@ -7,7 +7,8 @@ edition = "2021"
 anyhow = "*"
 env_logger = "*"
 log = "*"
-reqwest = { version = "*", features = ["gzip"] }
+quick-xml = "*"
+reqwest = { version = "*", features = ["deflate", "gzip", "zstd"] }
 select = "*"
 texting_robots = "*"
 tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
