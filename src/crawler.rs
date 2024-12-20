@@ -1,3 +1,13 @@
+//! TODO:
+//! - https://yandex.ru/support/webmaster/robot-workings/clean-param.html#clean-param
+//!
+//! # Crawl rate
+//!
+//! - neither Yandex nor Google respect Crawl-Delay in robots.txt since it is mostly misconfigured. Sites should use HTTP Status 429 instead.
+//!   https://webmaster.yandex.ru/blog/skorost-obkhoda-ili-ob-izmeneniyakh-v-uchete-direktivy-crawl-delay
+//!
+//! - https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate
+
 use crate::clock;
 use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
@@ -45,7 +55,13 @@ impl Crawler {
 
     pub async fn run(&mut self, url: Url) -> Result<()> {
         let mut robotstxt_sitemaps = self.get_sitemaps_from_robotstxt(&url).await?;
-        let urls_from_sitemaps_count = sitemaps::run(url, &mut robotstxt_sitemaps, &self.fetcher, &mut self.url_frontier).await?;
+        let urls_from_sitemaps_count = sitemaps::run(
+            url,
+            &mut robotstxt_sitemaps,
+            &self.fetcher,
+            &mut self.url_frontier,
+        )
+        .await?;
         debug!("Urls found from sitemaps: {urls_from_sitemaps_count}");
 
         while let Some(url) = self.url_frontier.get_url() {
@@ -82,12 +98,12 @@ impl Crawler {
         Ok(match self.get_or_fetch_robotstxt(url).await? {
             AR::Ok(robot) => {
                 for sitemap_url in &robot.sitemaps {
-                    if let Ok(url) = Url::parse(&sitemap_url) {
+                    if let Ok(url) = Url::parse(sitemap_url) {
                         sitemap_urls.push(url);
                     }
                 }
                 sitemap_urls
-            },
+            }
             // TODO some more error handling?
             // - set crawl status to retry on 5xx error?
             _ => sitemap_urls,

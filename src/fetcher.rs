@@ -13,7 +13,11 @@ pub struct FetchResult {
 
 impl Fetcher {
     pub fn new(bot_name: &str) -> Fetcher {
-        let ua_name = format!("{bot_name}/{}", env!("CARGO_PKG_VERSION"));
+        // TODO Get URL from a better place, e.g. Cargo.toml?
+        let ua_name = format!(
+            "{bot_name}/{} https://github.com/thkoch2001/lara#larabot",
+            env!("CARGO_PKG_VERSION")
+        );
         let client = Client::builder()
             .user_agent(ua_name)
             .gzip(true)
@@ -24,13 +28,16 @@ impl Fetcher {
         Fetcher { client }
     }
 
+    // TODO implement option to specify size limit
+    // Yandex limits robots.txt to 500 KB https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en
+    // Sitemaps are limited to 50 MB
     pub async fn fetch(&self, url: Url) -> FetchResult {
         debug!("Fetching {url}");
         let start_systemtime = SystemTime::now();
         let start_instant = Instant::now();
         let result = self.client.get(url.clone()).send().await;
         let duration = start_instant.elapsed();
-        let duration_ms = duration.as_millis().into();
+        let duration_ms = duration.as_millis();
 
         match result {
             Err(ref err) => {
@@ -40,7 +47,10 @@ impl Fetcher {
                 //return Err(FetchError::RequestError(err))
             }
             Ok(ref response) => {
-                debug!("fetched with status {} in {duration_ms} ms: {url}", response.status());
+                debug!(
+                    "fetched with status {} in {duration_ms} ms: {url}",
+                    response.status()
+                );
             }
         };
         FetchResult {

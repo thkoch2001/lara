@@ -6,6 +6,8 @@ TODO: https://doc.rust-lang.org/rustdoc/
 - https://github.com/utkarshkukreti/select.rs - extract data from HTML
 ** robots.txt
 
+[[https://www.rfc-editor.org/rfc/rfc9309.html][RFC 9309]], [[https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt][Google]], [[https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en][Yandex]] docs, [[https://www.robotstxt.org][robotstxt.org]]
+
 Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
 robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][RFC 9309]] and seems to be very "unrusty"
 (much mutable global state). After all it's a simple transliteration from C++.
@@ -60,6 +62,7 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/governor - A rate-limiting implementation in Rust
 - https://crates.io/crates/thiserror
 - https://crates.io/crates/tracing https://gist.github.com/oliverdaff/d1d5e5bc1baba087b768b89ff82dc3ec
+- https://crates.io/crates/governor - complex rate limiting algorithm, used in spyglass-search/netrunner
 
 *** HTML content / article extraction
 

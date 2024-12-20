@@ -9,8 +9,8 @@ mod clock;
 mod crawler;
 mod fetcher;
 mod robotstxt_cache;
-mod url_frontier;
 mod sitemaps;
+mod url_frontier;
 
 use anyhow::Result;
 use reqwest::Url;
@@ -23,6 +23,8 @@ async fn main() -> Result<()> {
     info!("starting up");
 
     let mut crawler = crawler::Crawler::new(BOTNAME);
-    crawler.run(Url::parse("https://de.populus.wiki").unwrap()).await?;
+    crawler
+        .run(Url::parse("https://de.populus.wiki").unwrap())
+        .await?;
     Ok(())
 }

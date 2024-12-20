@@ -7,17 +7,27 @@ use reqwest::Url;
 use std::collections::HashMap;
 use std::str;
 
-pub async fn run(url: Url, sitemap_urls: &mut Vec<Url>, fetcher: &Fetcher, url_frontier: &mut UrlFrontierVec) -> Result<u32> {
+pub async fn run(
+    url: Url,
+    sitemap_urls: &mut Vec<Url>,
+    fetcher: &Fetcher,
+    url_frontier: &mut UrlFrontierVec,
+) -> Result<u32> {
     let mut urls_count = 0;
-    if sitemap_urls.len() == 0 {
+    if sitemap_urls.is_empty() {
         // theoretically, there could be sitemaps below an URL path
-        let url = Url::parse(format!("{}://{}/sitemap.xml", url.scheme(), url.authority()).as_ref())?;
+        let url =
+            Url::parse(format!("{}://{}/sitemap.xml", url.scheme(), url.authority()).as_ref())?;
         sitemap_urls.push(url);
     }
 
     // TODO protect against infinite loops
-    while sitemap_urls.len() > 0 {
-        match fetcher.fetch(sitemap_urls.pop().expect("len>0")).await.result {
+    while !sitemap_urls.is_empty() {
+        match fetcher
+            .fetch(sitemap_urls.pop().expect("len>0"))
+            .await
+            .result
+        {
             Err(err) => debug!("{:?}", err),
             Ok(response) => {
                 let body = response.text().await?;
@@ -30,7 +40,7 @@ pub async fn run(url: Url, sitemap_urls: &mut Vec<Url>, fetcher: &Fetcher, url_f
     Ok(urls_count)
 }
 
-fn parse(body: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32){
+fn parse(body: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32) {
     // TODO can we get the body as a stream?
     // https://users.rust-lang.org/t/how-to-stream-reqwest-response-to-a-gzip-decoder/69706/4
     // TODO implement file size restriction of 50 MB
@@ -41,48 +51,49 @@ fn parse(body: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32){
     let mut in_entry = false;
     let mut sitemap_urls: Vec<Url> = Vec::new();
     let mut entry: HashMap<String, String> = HashMap::new();
-    let mut key: String = "".to_string();
+    let mut key: String = String::new();
     //let mut buf = Vec::new();
 
     loop {
-
         // TODO can we also use reader.read_event()?
-        match reader.read_event() {//_into(&mut buf) {
+        match reader.read_event() {
+            //_into(&mut buf) {
             Err(e) => debug!("Error at position {}: {e:?}", reader.error_position()),
             Ok(Event::Eof) => break,
             Ok(Event::Start(e)) => match e.name().as_ref() {
                 b"url" | b"sitemap" => in_entry = true,
-                name => if in_entry {
-                    if let Ok(s) = str::from_utf8(name) {
-                        key = <str as AsRef<str>>::as_ref(s).to_owned();
-                    }
-                },
-            },
-            Ok(Event::Text(e)) => if in_entry {
-                   entry.insert(key.to_string(), e.unescape().unwrap().into_owned());
-            }
-            Ok(Event::End(e)) => match e.name().as_ref() {
-                name@(b"url" | b"sitemap") => {
-                    in_entry = false;
-                    if entry.contains_key("loc") {
-                        if let Ok(url) = Url::parse(entry.get("loc").unwrap()) {
-                            match name {
-                                b"url" => {
-                                    url_frontier.put_url(url);
-                                    urls_count += 1;
-                                },
-                                b"sitemap" => sitemap_urls.push(url),
-                                _ => panic!("We already matched on this before!"),
-                            };
+                name => {
+                    if in_entry {
+                        if let Ok(s) = str::from_utf8(name) {
+                            // Clippy made me write this.
+                            <str as AsRef<str>>::as_ref(s).clone_into(&mut key);
                         }
                     }
-                },
-                _ => ()
+                }
             },
-
+            Ok(Event::Text(e)) => {
+                if in_entry {
+                    entry.insert(key.to_string(), e.unescape().unwrap().into_owned());
+                }
+            }
+            Ok(Event::End(e)) => if let name @ (b"url" | b"sitemap") = e.name().as_ref() {
+                in_entry = false;
+                if entry.contains_key("loc") {
+                    if let Ok(url) = Url::parse(entry.get("loc").unwrap()) {
+                        // TODO also use the other data, especially lastmod!
+                        match name {
+                            b"url" => {
+                                url_frontier.put_url(url);
+                                urls_count += 1;
+                            }
+                            b"sitemap" => sitemap_urls.push(url),
+                            _ => panic!("We already matched on this before!"),
+                        };
+                    }
+                }
+            },
             _ => (),
         }
-        //buf.clear();
     }
     #[allow(unreachable_code)]
     (sitemap_urls, urls_count)
