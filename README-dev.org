@@ -24,11 +24,11 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 
 *** Crates
 
-- https://crates.io/crates/sitemap old but 8 dependents
-- https://crates.io/crates/sitemap-iter (2022-02)
-- https://crates.io/crates/sitemaps (2024-06)
+- https://crates.io/crates/sitemap xml-rs, old but 8 dependents
+- https://crates.io/crates/sitemap-iter roxmltree (2022-02)
+- https://crates.io/crates/sitemaps quick-xml (2024-06), experimental learning project
 - https://crates.io/crates/wls - check for ideas
-- https://crates.io/crates/sitemapo (2023-07), dead repo
+- https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
 
 ** compiling with openssl on Debian
 
