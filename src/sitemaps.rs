@@ -10,7 +10,7 @@ use std::str;
 pub async fn run(
     url: Url,
     sitemap_urls: &mut Vec<Url>,
-    fetcher: &Fetcher,
+    fetcher: &mut Fetcher,
     url_frontier: &mut UrlFrontierVec,
 ) -> Result<u32> {
     let mut urls_count = 0;
@@ -23,30 +23,21 @@ pub async fn run(
 
     // TODO protect against infinite loops
     while !sitemap_urls.is_empty() {
-        match fetcher
-            .fetch(sitemap_urls.pop().expect("len>0"))
-            .await
-            .result
-        {
-            Err(err) => debug!("{:?}", err),
-            Ok(response) => {
-                let body = response.text().await?;
-                let (mut sitemap_urls_found, urls_added) = parse(&body, url_frontier);
-                sitemap_urls.append(&mut sitemap_urls_found);
-                urls_count += urls_added;
-            }
-        }
+        let fr = fetcher.fetch(sitemap_urls.pop().expect("len>0")).await?;
+        let (mut sitemap_urls_found, urls_added) = parse(&fr.body_str(), url_frontier);
+        sitemap_urls.append(&mut sitemap_urls_found);
+        urls_count += urls_added;
     }
     Ok(urls_count)
 }
 
-fn parse(body: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32) {
+fn parse(body_str: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32) {
     // TODO can we get the body as a stream?
     // https://users.rust-lang.org/t/how-to-stream-reqwest-response-to-a-gzip-decoder/69706/4
     // TODO implement file size restriction of 50 MB
     // https://doc.rust-lang.org/stable/std/io/trait.Read.html#method.take
     let mut urls_count = 0;
-    let mut reader = Reader::from_str(body);
+    let mut reader = Reader::from_str(body_str);
     reader.config_mut().trim_text(true);
     let mut in_entry = false;
     let mut sitemap_urls: Vec<Url> = Vec::new();
@@ -76,22 +67,24 @@ fn parse(body: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32) {
                     entry.insert(key.to_string(), e.unescape().unwrap().into_owned());
                 }
             }
-            Ok(Event::End(e)) => if let name @ (b"url" | b"sitemap") = e.name().as_ref() {
-                in_entry = false;
-                if entry.contains_key("loc") {
-                    if let Ok(url) = Url::parse(entry.get("loc").unwrap()) {
-                        // TODO also use the other data, especially lastmod!
-                        match name {
-                            b"url" => {
-                                url_frontier.put_url(url);
-                                urls_count += 1;
-                            }
-                            b"sitemap" => sitemap_urls.push(url),
-                            _ => panic!("We already matched on this before!"),
-                        };
+            Ok(Event::End(e)) => {
+                if let name @ (b"url" | b"sitemap") = e.name().as_ref() {
+                    in_entry = false;
+                    if entry.contains_key("loc") {
+                        if let Ok(url) = Url::parse(entry.get("loc").unwrap()) {
+                            // TODO also use the other data, especially lastmod!
+                            match name {
+                                b"url" => {
+                                    url_frontier.put_url(url);
+                                    urls_count += 1;
+                                }
+                                b"sitemap" => sitemap_urls.push(url),
+                                _ => panic!("We already matched on this before!"),
+                            };
+                        }
                     }
                 }
-            },
+            }
             _ => (),
         }
     }

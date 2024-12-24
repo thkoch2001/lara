@@ -1,12 +1,12 @@
 //! TODO:
-//! - https://yandex.ru/support/webmaster/robot-workings/clean-param.html#clean-param
+//! - <https://yandex.ru/support/webmaster/robot-workings/clean-param.html#clean-param>
 //!
 //! # Crawl rate
 //!
 //! - neither Yandex nor Google respect Crawl-Delay in robots.txt since it is mostly misconfigured. Sites should use HTTP Status 429 instead.
-//!   https://webmaster.yandex.ru/blog/skorost-obkhoda-ili-ob-izmeneniyakh-v-uchete-direktivy-crawl-delay
+//!   <https://webmaster.yandex.ru/blog/skorost-obkhoda-ili-ob-izmeneniyakh-v-uchete-direktivy-crawl-delay>
 //!
-//! - https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate
+//! - <https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate>
 
 use crate::clock;
 use crate::fetcher::Fetcher;
@@ -58,7 +58,7 @@ impl Crawler {
         let urls_from_sitemaps_count = sitemaps::run(
             url,
             &mut robotstxt_sitemaps,
-            &self.fetcher,
+            &mut self.fetcher,
             &mut self.url_frontier,
         )
         .await?;
@@ -78,11 +78,10 @@ impl Crawler {
                 }
             }
 
-            let fetchresult = self.fetcher.fetch(url.clone()).await;
-            let body = fetchresult.result?.text().await?;
+            let fetchresult = self.fetcher.fetch(url.clone()).await?;
 
             if urls_from_sitemaps_count == 0 {
-                let document = Document::from(body.as_ref());
+                let document = Document::from(fetchresult.body_str().as_ref());
                 let outlinks = find_outlinks(&document, &url);
                 for outlink in outlinks {
                     self.url_frontier.put_url(outlink.url);
@@ -153,14 +152,12 @@ impl Crawler {
 
         let scheme = url.scheme();
         let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
-        let fetchresult = self.fetcher.fetch(robots_url).await;
-        let response = fetchresult.result?;
+        let fetchresult = self.fetcher.fetch(robots_url).await?;
 
-        let ar = match response.status().as_u16() {
+        let ar = match fetchresult.status.as_u16() {
             400..=499 => AR::Unavailable,
             200 => {
-                let body = response.text().await?;
-                let robot = Robot::new(&self.bot_name, body.as_bytes());
+                let robot = Robot::new(&self.bot_name, &fetchresult.body);
                 AR::Ok(Rc::new(robot.unwrap()))
             }
             _ => AR::Unreachable(unreachable_first_tried.unwrap_or(fetchresult.start)),

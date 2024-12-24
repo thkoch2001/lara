@@ -4,6 +4,7 @@ TODO: https://doc.rust-lang.org/rustdoc/
 - https://crates.io/crates/scraper - HTML parsing and querying with CSS selectors
 - https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
 - https://github.com/utkarshkukreti/select.rs - extract data from HTML
+- https://crates.io/crates/rouille - mini HTTP server for status and control pages
 ** robots.txt
 
 [[https://www.rfc-editor.org/rfc/rfc9309.html][RFC 9309]], [[https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt][Google]], [[https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en][Yandex]] docs, [[https://www.robotstxt.org][robotstxt.org]]
@@ -63,6 +64,10 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/thiserror
 - https://crates.io/crates/tracing https://gist.github.com/oliverdaff/d1d5e5bc1baba087b768b89ff82dc3ec
 - https://crates.io/crates/governor - complex rate limiting algorithm, used in spyglass-search/netrunner
+- https://crates.io/crates/apalis - background job processing
+- https://github.com/poem-web/poem - web framework
+- https://crates.io/crates/metrics-dashboard uses poem and metrics
+- https://crates.io/crates/memberlist-core - Gossip protocol for cluster membership
 
 *** HTML content / article extraction
 

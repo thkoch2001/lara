@@ -5,14 +5,17 @@ edition = "2021"
 
 [dependencies]
 anyhow = "*"
+bytes = "*"
+chrono = "*"
 env_logger = "*"
 log = "*"
 quick-xml = "*"
 reqwest = { version = "*", features = ["deflate", "gzip", "zstd"] }
 select = "*"
 texting_robots = "*"
-tokio = { version = "*", features = ["sync", "macros", "io-util", "rt", "rt-multi-thread"] }
+tokio = { version = "*", features = ["fs", "io-util", "macros", "rt", "rt-multi-thread", "sync"] }
 url = "*"
+uuid = { version = "*", features = ["v4"] }
 
 [dev-dependencies]
 assertables = "*"
