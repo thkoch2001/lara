@@ -1,14 +1,16 @@
 use anyhow::Result;
+use async_compression::tokio::write::GzipEncoder;
+use async_compression::Level;
 use bytes::Bytes;
 use chrono::prelude::*;
-use reqwest::{header::HeaderMap, Client, Error, Response, StatusCode, Url};
+use reqwest::{header::HeaderMap, Client, StatusCode, Url, Version};
 use std::time::{Duration, Instant, SystemTime};
 use tokio::fs::File;
-use tokio::io::{self, AsyncWriteExt, BufWriter};
+use tokio::io::{self, AsyncWriteExt};
 use uuid::Uuid;
 
 pub struct Fetcher {
-    archive_file: Option<BufWriter<File>>,
+    archive_file: Option<GzipEncoder<File>>,
     archive_file_cnt: u32,
     archive_file_bytes_written: usize,
     client: Client,
@@ -20,11 +22,16 @@ pub struct FetchResult {
     pub start: SystemTime,
     pub status: StatusCode,
     pub url: Url,
+    pub http_version: Version,
 }
 
 impl FetchResult {
     pub fn body_str(&self) -> String {
         String::from_utf8_lossy(&self.body).to_string()
+    }
+
+    fn status_line(&self) -> String {
+        format!("{:?} {}\r\n", self.http_version, self.status)
     }
 }
 
@@ -38,8 +45,8 @@ impl Fetcher {
         let client = Client::builder()
             .user_agent(ua_name)
             .gzip(true)
-            .connect_timeout(Duration::from_secs(1))
-            .timeout(Duration::from_secs(10))
+            .connect_timeout(Duration::from_millis(500))
+            .timeout(Duration::from_millis(10000))
             .build()
             .expect("Failure while building HTTP client");
         Fetcher {
@@ -74,6 +81,7 @@ impl Fetcher {
         );
         let status = response.status();
         let url = response.url().clone();
+        let http_version = response.version();
         let headers = response.headers().clone();
         let body: Bytes = response.bytes().await?;
 
@@ -83,28 +91,40 @@ impl Fetcher {
             start: start_systemtime,
             status,
             url,
+            http_version,
         };
         self.write_to_archive(&fr, &headers).await?;
         Ok(fr)
     }
 
+    pub async fn shutdown(&mut self) -> Result<()> {
+        debug!("shutdown fetcher");
+        if self.archive_file.is_some() {
+            self.archive_file.as_mut().unwrap().shutdown().await?;
+            self.archive_file = None;
+            self.archive_file_bytes_written = 0;
+        }
+        Ok(())
+    }
+
+    // TODO: directly compress the archive file
     async fn write_to_archive(&mut self, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
         if self.archive_file.is_none() {
-            let filename = format!("/home/thk/tmp/archive_{}.warc", self.archive_file_cnt);
+            let filename = format!("/home/thk/tmp/archive_{:03}.warc.gz", self.archive_file_cnt);
             debug!("Starting new warc file: {filename}");
             let tokio_file = File::create(filename).await?;
+            let gzip_encoder = GzipEncoder::with_quality(tokio_file, Level::Best);
             self.archive_file_cnt += 1;
-            self.archive_file = Some(BufWriter::new(tokio_file));
+            self.archive_file = Some(gzip_encoder);
             // TODO start a new file with a warcinfo record
         }
-        let writer: &mut BufWriter<File> = self.archive_file.as_mut().unwrap();
+        let writer = self.archive_file.as_mut().unwrap();
         let bytes_written = Self::write_record(writer, fr, headers).await?;
         self.archive_file_bytes_written += bytes_written;
 
-        // TODO set to ~64MB?
+        // TODO somehow get the size of the compressed file?
         if self.archive_file_bytes_written > 1024 * 1024 {
-            writer.get_mut().sync_all().await?;
-            self.archive_file = None;
+            self.shutdown().await?;
         }
 
         Ok(())
@@ -113,13 +133,14 @@ impl Fetcher {
     /// WARC 1.1 spec:
     /// <https://github.com/iipc/warc-specifications/blob/master/specifications/warc-format/warc-1.1-annotated/index.md>
     async fn write_record(
-        w: &mut BufWriter<File>,
+        w: &mut GzipEncoder<File>,
         fr: &FetchResult,
         headers: &HeaderMap,
     ) -> io::Result<usize> {
         let mut cnt = 0;
         let mut headers_bytes: Vec<u8> = Vec::new();
 
+        headers_bytes.extend(fr.status_line().as_bytes());
         for (k, v) in headers {
             headers_bytes.extend(k.to_string().as_bytes());
             headers_bytes.extend(b": ");

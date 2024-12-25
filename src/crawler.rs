@@ -14,6 +14,7 @@ use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::sitemaps;
 use crate::url_frontier::{UrlFrontier, UrlFrontierVec};
 use anyhow::Result;
+use async_shutdown::ShutdownManager;
 use reqwest::Url;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
@@ -53,7 +54,7 @@ impl Crawler {
         }
     }
 
-    pub async fn run(&mut self, url: Url) -> Result<()> {
+    async fn run_intern(&mut self, url: Url) -> Result<()> {
         let mut robotstxt_sitemaps = self.get_sitemaps_from_robotstxt(&url).await?;
         let urls_from_sitemaps_count = sitemaps::run(
             url,
@@ -89,6 +90,20 @@ impl Crawler {
             }
         }
         Ok(())
+    }
+
+    pub async fn run(&mut self, shutdown: ShutdownManager<i32>, url: Url) {
+        let Ok(_delay_token) = shutdown.delay_shutdown_token() else {
+            warn!("Shutdown already started");
+            return;
+        };
+        let result = shutdown.wrap_cancel(self.run_intern(url)).await;
+        self.fetcher.shutdown().await;
+        match result {
+            Ok(Err(e)) => error!("Crawler error: {:?}", e),
+            Ok(Ok(())) => info!("Crawl finished"),
+            Err(_exit_code) => warn!("Shutdown triggered"),
+        };
     }
 
     // robots.txt stuff below
