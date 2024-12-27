@@ -33,6 +33,18 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - https://crates.io/crates/wls - check for ideas
 - https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
 
+** TODO
+*** Canonical Link Element
+- https://en.wikipedia.org/wiki/Canonical_link_element
+*** URL normalization
+- https://crates.io/crates/urlnorm 
+- https://en.wikipedia.org/wiki/URI_normalization
+  - "Schonfeld et al. (2006) present a heuristic called DustBuster for detecting DUST (different URIs with similar text)"
+**** remove tracking URL parameters
+- https://github.com/brave/brave-browser/wiki/Query-String-Filter
+- https://gitlab.com/ClearURLs/ClearUrls
+  - https://gitlab.com/ClearURLs/rules -> data.min.json -> "globalRules"
+
 ** compiling with openssl on Debian
 
 https://github.com/sfackler/rust-openssl/issues/2333
