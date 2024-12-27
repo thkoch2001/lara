@@ -1,27 +1,43 @@
 use anyhow::Result;
-use async_compression::tokio::write::GzipEncoder;
-use async_compression::Level;
-use bytes::Bytes;
 use chrono::prelude::*;
-use reqwest::{header::HeaderMap, Client, StatusCode, Url, Version};
+use flate2::{write::GzEncoder, Compression};
+use http::{HeaderMap, StatusCode, Version};
+use std::fs::File;
+use std::io::{self, Write};
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
-use tokio::fs::File;
-use tokio::io::{self, AsyncWriteExt};
+use ureq::config::AutoHeaderValue as AHV;
+use ureq::tls::{TlsConfig, TlsProvider};
+use ureq::Agent;
+use url::Url;
 use uuid::Uuid;
 
+/// Maximum size for HTTP response body
+const MAX_BODY_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
+
 pub struct Fetcher {
-    archive_file: Option<GzipEncoder<File>>,
+    archive_file: Option<GzEncoder<File>>,
     archive_file_cnt: u32,
     archive_file_bytes_written: usize,
-    client: Client,
+    agent: Agent,
+}
+
+impl Drop for Fetcher {
+    fn drop(&mut self) {
+        debug!("dropping fetcher");
+        if self.archive_file.is_some() {
+            if let Err(e) = self.close_archive_file() {
+                error!("{e:?}");
+            }
+        }
+    }
 }
 
 pub struct FetchResult {
-    pub body: Bytes,
+    pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
     pub duration_ms: u128,
     pub start: SystemTime,
     pub status: StatusCode,
-    pub url: Url,
     pub http_version: Version,
 }
 
@@ -42,33 +58,47 @@ impl Fetcher {
             "{bot_name}/{} https://github.com/thkoch2001/lara#larabot",
             env!("CARGO_PKG_VERSION")
         );
-        let client = Client::builder()
-            .user_agent(ua_name)
-            .gzip(true)
-            .connect_timeout(Duration::from_millis(500))
-            .timeout(Duration::from_millis(10000))
+        let agent = Agent::config_builder()
+            .http_status_as_error(false)
+            .user_agent(AHV::Provided(Arc::new(ua_name)))
+            .max_redirects(0) // TODO: Handle redirects
+            .timeout_connect(Some(Duration::from_millis(5000)))
+            .timeout_global(Some(Duration::from_millis(20000)))
+            .tls_config(
+                TlsConfig::builder()
+                    .provider(TlsProvider::NativeTls)
+                    .build(),
+            )
             .build()
-            .expect("Failure while building HTTP client");
+            .into();
         Fetcher {
             archive_file: None,
             archive_file_cnt: 0,
             archive_file_bytes_written: 0,
-            client,
+            agent,
         }
+    }
+
+    pub fn close_archive_file(&mut self) -> Result<()> {
+        debug!("closing archive file");
+        self.archive_file.as_mut().unwrap().try_finish()?;
+        self.archive_file = None;
+        self.archive_file_bytes_written = 0;
+        Ok(())
     }
 
     // TODO implement option to specify size limit
     // Yandex limits robots.txt to 500 KB https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en
     // Sitemaps are limited to 50 MB
-    pub async fn fetch(&mut self, url: Url) -> Result<FetchResult> {
+    pub fn fetch(&mut self, url: &Url) -> Result<FetchResult> {
         debug!("Fetching {url}");
         let start_systemtime = SystemTime::now();
         let start_instant = Instant::now();
-        let result = self.client.get(url.clone()).send().await;
+        let result = self.agent.get(url.to_string()).call();
         let duration = start_instant.elapsed();
         let duration_ms = duration.as_millis();
 
-        let response = result?;
+        let mut response = result?;
 
         // debug!("Unable to fetch [{:?}] {url} - {err}", err.status());
         // maybe FetchError?
@@ -80,51 +110,45 @@ impl Fetcher {
             response.status()
         );
         let status = response.status();
-        let url = response.url().clone();
         let http_version = response.version();
         let headers = response.headers().clone();
-        let body: Bytes = response.bytes().await?;
+        let body = response
+            .body_mut()
+            .with_config()
+            .limit(MAX_BODY_SIZE)
+            .read_to_vec()?;
 
         let fr = FetchResult {
             body,
             duration_ms,
             start: start_systemtime,
             status,
-            url,
             http_version,
         };
-        self.write_to_archive(&fr, &headers).await?;
+        self.write_to_archive(url, &fr, &headers)?;
         Ok(fr)
     }
 
-    pub async fn shutdown(&mut self) -> Result<()> {
-        debug!("shutdown fetcher");
-        if self.archive_file.is_some() {
-            self.archive_file.as_mut().unwrap().shutdown().await?;
-            self.archive_file = None;
-            self.archive_file_bytes_written = 0;
-        }
-        Ok(())
-    }
-
     // TODO: directly compress the archive file
-    async fn write_to_archive(&mut self, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
+    fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
         if self.archive_file.is_none() {
-            let filename = format!("/home/thk/tmp/archive_{:03}.warc.gz", self.archive_file_cnt);
-            debug!("Starting new warc file: {filename}");
-            let tokio_file = File::create(filename).await?;
-            let gzip_encoder = GzipEncoder::with_quality(tokio_file, Level::Best);
+            let path = format!("/home/thk/tmp/archive_{:03}.warc.gz", self.archive_file_cnt);
+            debug!("Starting new warc file: {path}");
+            let file = File::create(path)?;
+            let gzip_encoder = GzEncoder::new(file, Compression::best());
             self.archive_file_cnt += 1;
             self.archive_file = Some(gzip_encoder);
             // TODO start a new file with a warcinfo record
         }
         let writer = self.archive_file.as_mut().unwrap();
-        let bytes_written = Self::write_record(writer, fr, headers).await?;
+        let bytes_written = Self::write_record(writer, url, fr, headers)?;
         self.archive_file_bytes_written += bytes_written;
 
         // TODO somehow get the size of the compressed file?
+        // file.metadata().unwrap().len() encoder has get_ref()
+        // Optimization: check metadata only after at least the threshold of uncompressed bytes has been written
         if self.archive_file_bytes_written > 1024 * 1024 {
-            self.shutdown().await?;
+            let () = self.close_archive_file()?;
         }
 
         Ok(())
@@ -132,8 +156,9 @@ impl Fetcher {
 
     /// WARC 1.1 spec:
     /// <https://github.com/iipc/warc-specifications/blob/master/specifications/warc-format/warc-1.1-annotated/index.md>
-    async fn write_record(
-        w: &mut GzipEncoder<File>,
+    fn write_record(
+        w: &mut GzEncoder<File>,
+        url: &Url,
         fr: &FetchResult,
         headers: &HeaderMap,
     ) -> io::Result<usize> {
@@ -149,29 +174,25 @@ impl Fetcher {
         }
         headers_bytes.extend(b"\r\n");
 
-        cnt += w.write(b"WARC/1.1\r\nWARC-Type: response\r\nContent-Type: application/http; msgtype=response\r\nWARC-Record-ID: ").await?;
-        cnt += w
-            .write(Uuid::new_v4().to_urn().to_string().as_bytes())
-            .await?;
-        cnt += w.write(b"\r\nWARC-Target-URI: ").await?;
-        cnt += w.write(fr.url.to_string().as_bytes()).await?;
-        cnt += w.write(b"\r\nContent-Length: ").await?;
+        cnt += w.write(b"WARC/1.1\r\nWARC-Type: response\r\nContent-Type: application/http; msgtype=response\r\nWARC-Record-ID: ")?;
+        cnt += w.write(Uuid::new_v4().to_urn().to_string().as_bytes())?;
+        cnt += w.write(b"\r\nWARC-Target-URI: ")?;
+        cnt += w.write(url.to_string().as_bytes())?;
+        cnt += w.write(b"\r\nContent-Length: ")?;
         // TODO: check whether body.len() is correct!
         let content_length = headers_bytes.len() + fr.body.len();
-        cnt += w.write(content_length.to_string().as_bytes()).await?;
-        cnt += w.write(b"\r\nWARC-Date: ").await?;
+        cnt += w.write(content_length.to_string().as_bytes())?;
+        cnt += w.write(b"\r\nWARC-Date: ")?;
         // TODO: check correct formatting of date!
         // WARC-Date fr.start UTC timestamp formatted according to [W3CDTF]
         let dt: DateTime<Utc> = fr.start.into();
-        cnt += w
-            .write(dt.to_rfc3339_opts(SecondsFormat::Secs, true).as_bytes())
-            .await?;
-        cnt += w.write(b"\r\n\r\n").await?;
+        cnt += w.write(dt.to_rfc3339_opts(SecondsFormat::Secs, true).as_bytes())?;
+        cnt += w.write(b"\r\n\r\n")?;
 
-        cnt += w.write(&headers_bytes).await?;
-        cnt += w.write(fr.body.as_ref()).await?;
-        cnt += w.write(b"\r\n\r\n").await?;
-        w.flush().await?;
+        cnt += w.write(&headers_bytes)?;
+        cnt += w.write(fr.body.as_ref())?;
+        cnt += w.write(b"\r\n\r\n")?;
+        w.flush()?;
 
         Ok(cnt)
     }

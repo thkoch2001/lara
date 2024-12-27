@@ -79,6 +79,7 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/apalis - background job processing
 - https://github.com/poem-web/poem - web framework
 - https://crates.io/crates/metrics-dashboard uses poem and metrics
+- https://crates.io/crates/metrics_server
 - https://crates.io/crates/memberlist-core - Gossip protocol for cluster membership
 
 *** HTML content / article extraction

@@ -3,12 +3,12 @@ use crate::url_frontier::{UrlFrontier, UrlFrontierVec};
 use anyhow::Result;
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
-use reqwest::Url;
 use std::collections::HashMap;
 use std::str;
+use url::Url;
 
-pub async fn run(
-    url: Url,
+pub fn run(
+    url: &Url,
     sitemap_urls: &mut Vec<Url>,
     fetcher: &mut Fetcher,
     url_frontier: &mut UrlFrontierVec,
@@ -23,7 +23,7 @@ pub async fn run(
 
     // TODO protect against infinite loops
     while !sitemap_urls.is_empty() {
-        let fr = fetcher.fetch(sitemap_urls.pop().expect("len>0")).await?;
+        let fr = fetcher.fetch(&sitemap_urls.pop().expect("len>0"))?;
         let (mut sitemap_urls_found, urls_added) = parse(&fr.body_str(), url_frontier);
         sitemap_urls.append(&mut sitemap_urls_found);
         urls_count += urls_added;

@@ -1,5 +1,5 @@
-use reqwest::Url;
 use std::collections::HashMap;
+use url::Url;
 
 pub trait UrlFrontier {
     fn get_url(&mut self) -> Option<Url>;

@@ -13,15 +13,16 @@ use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::sitemaps;
 use crate::url_frontier::{UrlFrontier, UrlFrontierVec};
+
 use anyhow::Result;
-use async_shutdown::ShutdownManager;
-use reqwest::Url;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::SystemTime;
 use texting_robots::Robot;
-use url::ParseError;
+use url::{ParseError, Url};
 
 #[derive(PartialEq)]
 pub enum CheckResult {
@@ -35,6 +36,7 @@ pub struct Crawler {
     bot_name: String,
     fetcher: Fetcher,
     robotstxt_cache: RobotsTxtCache<Robot>,
+    shutdown_flag: Arc<AtomicBool>,
     url_frontier: UrlFrontierVec,
 }
 
@@ -45,28 +47,32 @@ struct Outlink {
 }
 
 impl Crawler {
-    pub fn new(bot_name: &str) -> Self {
+    pub fn new(bot_name: &str, shutdown_flag: Arc<AtomicBool>) -> Self {
         Crawler {
             bot_name: bot_name.to_string(),
             fetcher: Fetcher::new(bot_name),
             robotstxt_cache: RobotsTxtCache::new(SystemTime::now()),
+            shutdown_flag,
             url_frontier: UrlFrontierVec::new(),
         }
     }
 
-    async fn run_intern(&mut self, url: Url) -> Result<()> {
-        let mut robotstxt_sitemaps = self.get_sitemaps_from_robotstxt(&url).await?;
+    pub fn run(&mut self, url: &Url) -> Result<()> {
+        let mut robotstxt_sitemaps = self.get_sitemaps_from_robotstxt(url)?;
         let urls_from_sitemaps_count = sitemaps::run(
             url,
             &mut robotstxt_sitemaps,
             &mut self.fetcher,
             &mut self.url_frontier,
-        )
-        .await?;
+        )?;
         debug!("Urls found from sitemaps: {urls_from_sitemaps_count}");
 
         while let Some(url) = self.url_frontier.get_url() {
-            match self.check_robotstxt(&url).await? {
+            if self.shutdown_flag.load(Ordering::Relaxed) {
+                break;
+            }
+
+            match self.check_robotstxt(&url)? {
                 CheckResult::Allowed => (),
                 CheckResult::Disallowed => {
                     info!("Crawling of {url} forbidden by robots.txt");
@@ -79,7 +85,7 @@ impl Crawler {
                 }
             }
 
-            let fetchresult = self.fetcher.fetch(url.clone()).await?;
+            let fetchresult = self.fetcher.fetch(&url.clone())?;
 
             if urls_from_sitemaps_count == 0 {
                 let document = Document::from(fetchresult.body_str().as_ref());
@@ -92,24 +98,10 @@ impl Crawler {
         Ok(())
     }
 
-    pub async fn run(&mut self, shutdown: ShutdownManager<i32>, url: Url) {
-        let Ok(_delay_token) = shutdown.delay_shutdown_token() else {
-            warn!("Shutdown already started");
-            return;
-        };
-        let result = shutdown.wrap_cancel(self.run_intern(url)).await;
-        self.fetcher.shutdown().await;
-        match result {
-            Ok(Err(e)) => error!("Crawler error: {:?}", e),
-            Ok(Ok(())) => info!("Crawl finished"),
-            Err(_exit_code) => warn!("Shutdown triggered"),
-        };
-    }
-
     // robots.txt stuff below
-    pub async fn get_sitemaps_from_robotstxt(&mut self, url: &Url) -> Result<Vec<Url>> {
+    pub fn get_sitemaps_from_robotstxt(&mut self, url: &Url) -> Result<Vec<Url>> {
         let mut sitemap_urls: Vec<Url> = Vec::new();
-        Ok(match self.get_or_fetch_robotstxt(url).await? {
+        Ok(match self.get_or_fetch_robotstxt(url)? {
             AR::Ok(robot) => {
                 for sitemap_url in &robot.sitemaps {
                     if let Ok(url) = Url::parse(sitemap_url) {
@@ -124,8 +116,8 @@ impl Crawler {
         })
     }
 
-    pub async fn check_robotstxt(&mut self, url: &Url) -> Result<CheckResult> {
-        let ar = self.get_or_fetch_robotstxt(url).await?;
+    pub fn check_robotstxt(&mut self, url: &Url) -> Result<CheckResult> {
+        let ar = self.get_or_fetch_robotstxt(url)?;
 
         Ok(match ar {
             AR::Unavailable => CheckResult::Allowed,
@@ -140,7 +132,7 @@ impl Crawler {
         })
     }
 
-    async fn get_or_fetch_robotstxt(&mut self, url: &Url) -> Result<AR<Robot>> {
+    fn get_or_fetch_robotstxt(&mut self, url: &Url) -> Result<AR<Robot>> {
         let authority = url.authority();
 
         let mut unreachable_first_tried: Option<SystemTime> = None;
@@ -167,7 +159,7 @@ impl Crawler {
 
         let scheme = url.scheme();
         let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
-        let fetchresult = self.fetcher.fetch(robots_url).await?;
+        let fetchresult = self.fetcher.fetch(&robots_url)?;
 
         let ar = match fetchresult.status.as_u16() {
             400..=499 => AR::Unavailable,

@@ -5,17 +5,16 @@ edition = "2021"
 
 [dependencies]
 anyhow = "*"
-async-compression = { version = "*", features = ["gzip", "tokio"] }
-async-shutdown = "*"
-bytes = "*"
 chrono = "*"
+ctrlc = "*"
 env_logger = "*"
+flate2 = "*"
+http = "*"
 log = "*"
 quick-xml = "*"
-reqwest = { version = "*", features = ["deflate", "gzip", "zstd"] }
 select = "*"
 texting_robots = "*"
-tokio = { version = "*", features = ["fs", "io-util", "macros", "rt", "rt-multi-thread", "signal", "sync"] }
+ureq = { version = "3.0.0-rc3", features = ["brotli", "charset", "gzip", "native-tls"]}
 url = "*"
 uuid = { version = "*", features = ["v4"] }
 
