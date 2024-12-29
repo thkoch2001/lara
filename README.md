@@ -36,7 +36,7 @@ It is widely acknowledged, that the quality of Google search has declined:
 The paper [GOGGLES: Democracy dies in darkness, and so does the Web][Goggles]
 by the Brave Search Team discusses the issue of biases in search engines.
 
-[Googgles]: https://brave.com/static-assets/files/goggles.pdf
+[Goggles]: https://brave.com/static-assets/files/goggles.pdf
 
 The [Trusted News Initiative][5] (Wikipedia!) is an alliance of Big Tech and
 others to combat what they consider disinformation.
