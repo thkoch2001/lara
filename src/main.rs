@@ -1,3 +1,10 @@
+//! Crawler
+//!
+//! - Consumes urls from url_frontier
+//! - respects robots.txt
+//! - checks sitemaps.xml
+//! - writes WARC archive of crawled urls
+
 #![warn(clippy::all, clippy::pedantic)]
 #![warn(missing_docs)]
 
@@ -16,7 +23,6 @@ mod robotstxt_cache;
 mod sitemaps;
 mod url_frontier;
 
-use env_config::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;

@@ -13,6 +13,7 @@ http = "*"
 log = "*"
 quick-xml = "*"
 select = "*"
+simple_moving_average = "*"
 texting_robots = "*"
 ureq = { version = "3.0.0-rc3", features = ["brotli", "charset", "gzip", "native-tls"]}
 url = "*"

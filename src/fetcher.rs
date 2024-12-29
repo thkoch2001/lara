@@ -3,9 +3,12 @@ use chrono::prelude::*;
 use crate::env_config::*;
 use flate2::{write::GzEncoder, Compression};
 use http::{HeaderMap, StatusCode, Version};
+use simple_moving_average::{NoSumSMA, SMA};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::ops::Add;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use ureq::config::AutoHeaderValue as AHV;
@@ -14,8 +17,42 @@ use ureq::Agent;
 use url::Url;
 use uuid::Uuid;
 
+// TODO Move to configuration
 /// Maximum size for HTTP response body
 const MAX_BODY_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
+const MIN_FETCH_DURATION: Duration = Duration::from_millis(150); // We actually wait 3xavg fetch duration between fetches
+
+struct Politeness {
+    until: SystemTime,
+    duration_avg: NoSumSMA<Duration, u32, 10>,
+}
+
+impl Default for Politeness {
+    fn default() -> Self {
+        Politeness {
+            until: SystemTime::UNIX_EPOCH,
+            duration_avg: NoSumSMA::<Duration, u32, 10>::from_zero(Duration::ZERO),
+        }
+    }
+}
+
+impl Politeness {
+    pub fn update(&mut self, fr: &FetchResult) {
+        match fr.status.as_u16() {
+            200 => {
+                self.duration_avg.add_sample(std::cmp::max(fr.duration, MIN_FETCH_DURATION));
+                self.until = fr.start.add(self.duration_avg.get_average() * 3);
+            }
+            429 => todo!(),
+            404 => (),
+            _ => (), // todo
+        }
+    }
+
+    pub fn wait(&self) {
+        crate::clock::wait(self.until);
+    }
+}
 
 pub struct Fetcher {
     archive_dir: PathBuf,
@@ -23,6 +60,7 @@ pub struct Fetcher {
     archive_file_cnt: u32,
     archive_file_bytes_written: usize,
     agent: Agent,
+    politeness: HashMap<String, Politeness>,
 }
 
 impl Drop for Fetcher {
@@ -38,7 +76,7 @@ impl Drop for Fetcher {
 
 pub struct FetchResult {
     pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
-    pub duration_ms: u128,
+    pub duration: Duration,
     pub start: SystemTime,
     pub status: StatusCode,
     pub http_version: Version,
@@ -84,6 +122,7 @@ impl Fetcher {
             archive_file_cnt: 0,
             archive_file_bytes_written: 0,
             agent,
+            politeness: HashMap::new(),
         }
     }
 
@@ -100,11 +139,13 @@ impl Fetcher {
     // Sitemaps are limited to 50 MB
     pub fn fetch(&mut self, url: &Url) -> Result<FetchResult> {
         debug!("Fetching {url}");
+        // todo clean old entries from politeness HashMap
+        let politeness = self.politeness.entry(url.authority().to_string()).or_default();
+        politeness.wait();
         let start_systemtime = SystemTime::now();
         let start_instant = Instant::now();
         let result = self.agent.get(url.to_string()).call();
         let duration = start_instant.elapsed();
-        let duration_ms = duration.as_millis();
 
         let mut response = result?;
 
@@ -114,8 +155,8 @@ impl Fetcher {
         //return Err(FetchError::RequestError(err))
 
         debug!(
-            "fetched with status {} in {duration_ms} ms: {url}",
-            response.status()
+            "fetched with status {} in {} ms: {url}",
+            response.status(), duration.as_millis()
         );
         let status = response.status();
         let http_version = response.version();
@@ -128,11 +169,12 @@ impl Fetcher {
 
         let fr = FetchResult {
             body,
-            duration_ms,
+            duration,
             start: start_systemtime,
             status,
             http_version,
         };
+        politeness.update(&fr);
         self.write_to_archive(url, &fr, &headers)?;
         Ok(fr)
     }

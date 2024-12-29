@@ -5,7 +5,6 @@ pub trait UrlFrontier {
     fn get_url(&mut self) -> Option<Url>;
 
     fn put_url(&mut self, url: Url);
-    fn len(&self) -> usize;
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -35,9 +34,5 @@ impl UrlFrontier for UrlFrontierVec {
         }
         self.urls.push(url);
         self.url_data.insert(url_string, Some(()));
-    }
-
-    fn len(&self) -> usize {
-        self.urls.len()
     }
 }
