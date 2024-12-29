@@ -33,17 +33,17 @@ It is widely acknowledged, that the quality of Google search has declined:
 [^3]: 2023-07-28, Cory Doctorow: [Microincentives and Enshittification](https://pluralistic.net/2023/07/28/microincentives-and-enshittification)
 [^4]: 2023-12-28, Martin Hamilton: [Honey I federated the search engine - finding stuff online post-big tech](https://media.ccc.de/v/37c3-lightningtalks-58060-honey-i-federated-the-search-engine-finding-stuff-online-post-big-tech)
 
-The paper (GOGGLES: Democracy dies in darkness, and so does the Web)[Goggles]
+The paper [GOGGLES: Democracy dies in darkness, and so does the Web][Goggles]
 by the Brave Search Team discusses the issue of biases in search engines.
 
 [Googgles]: https://brave.com/static-assets/files/goggles.pdf
 
-The [Trusted News Initiative](5) (Wikipedia!) is an alliance of Big Tech and
+The [Trusted News Initiative][5] (Wikipedia!) is an alliance of Big Tech and
 others to combat what they consider disinformation.
 
 [5]: https://en.wikipedia.org/wiki/Trusted_News_Initiative
 
-See also my blog post [Rebuild search with trust](6) with further motivation
+See also my blog post [Rebuild search with trust][6] with further motivation
 and links to previous decentralized search projects, especially
 [YaCy](https://yacy.net).
 
