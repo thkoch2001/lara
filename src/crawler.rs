@@ -9,6 +9,7 @@
 //! - <https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate>
 
 use crate::clock;
+use crate::env_config::*;
 use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::sitemaps;
@@ -47,10 +48,11 @@ struct Outlink {
 }
 
 impl Crawler {
-    pub fn new(bot_name: &str, shutdown_flag: Arc<AtomicBool>) -> Self {
+    pub fn new(shutdown_flag: Arc<AtomicBool>) -> Self {
+        let bot_name = BOT_NAME.get();
         Crawler {
-            bot_name: bot_name.to_string(),
-            fetcher: Fetcher::new(bot_name),
+            bot_name: bot_name.clone(),
+            fetcher: Fetcher::new(&bot_name),
             robotstxt_cache: RobotsTxtCache::new(SystemTime::now()),
             shutdown_flag,
             url_frontier: UrlFrontierVec::new(),

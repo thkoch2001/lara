@@ -9,17 +9,23 @@ extern crate log;
 
 mod clock;
 mod crawler;
+#[macro_use]
+mod env_vars;
 mod fetcher;
 mod robotstxt_cache;
 mod sitemaps;
 mod url_frontier;
 
+use env_config::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use url::Url;
 
-const BOTNAME: &str = "larabot";
+env_vars![
+    BOT_NAME
+    ARCHIVE_DIR
+];
 
 fn ctrlc_flag() -> Arc<AtomicBool> {
     let flag = Arc::new(AtomicBool::new(false));
@@ -37,8 +43,11 @@ fn main() {
     env_logger::init();
     info!("starting up");
 
+    env_config::check();
+    info!("Configuration: {:?}", env_config::get_map());
+
     let t = thread::spawn(move || {
-        let mut crawler = crawler::Crawler::new(BOTNAME, ctrlc_flag());
+        let mut crawler = crawler::Crawler::new(ctrlc_flag());
         if let Err(e) = crawler.run(&Url::parse("https://de.populus.wiki").unwrap()) {
             error!("{e:?}");
         }

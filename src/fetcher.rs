@@ -1,9 +1,11 @@
 use anyhow::Result;
 use chrono::prelude::*;
+use crate::env_config::*;
 use flate2::{write::GzEncoder, Compression};
 use http::{HeaderMap, StatusCode, Version};
 use std::fs::File;
 use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use ureq::config::AutoHeaderValue as AHV;
@@ -16,6 +18,7 @@ use uuid::Uuid;
 const MAX_BODY_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
 
 pub struct Fetcher {
+    archive_dir: PathBuf,
     archive_file: Option<GzEncoder<File>>,
     archive_file_cnt: u32,
     archive_file_bytes_written: usize,
@@ -53,6 +56,10 @@ impl FetchResult {
 
 impl Fetcher {
     pub fn new(bot_name: &str) -> Fetcher {
+        let archive_dir = ARCHIVE_DIR.parse::<PathBuf>();
+        let m = archive_dir.metadata().expect(&format!("Could not get metadata of ARCHIVE_DIR: {}", archive_dir.display()));
+        assert!(m.is_dir(), "Not a dir: {}", archive_dir.display());
+
         // TODO Get URL from a better place, e.g. Cargo.toml?
         let ua_name = format!(
             "{bot_name}/{} https://github.com/thkoch2001/lara#larabot",
@@ -72,6 +79,7 @@ impl Fetcher {
             .build()
             .into();
         Fetcher {
+            archive_dir,
             archive_file: None,
             archive_file_cnt: 0,
             archive_file_bytes_written: 0,
@@ -132,7 +140,7 @@ impl Fetcher {
     // TODO: directly compress the archive file
     fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
         if self.archive_file.is_none() {
-            let path = format!("/home/thk/tmp/archive_{:03}.warc.gz", self.archive_file_cnt);
+            let path = format!("{}/archive_{:03}.warc.gz", self.archive_dir.display(), self.archive_file_cnt);
             debug!("Starting new warc file: {path}");
             let file = File::create(path)?;
             let gzip_encoder = GzEncoder::new(file, Compression::best());
