@@ -1,4 +1,4 @@
-use std::time::{Duration, SystemTime, SystemTimeError};
+use std::time::{Duration, SystemTime};
 
 pub const HALF_DAY: u64 = 12 * 60 * 60;
 pub const ONE_DAY: u64 = 24 * 60 * 60;

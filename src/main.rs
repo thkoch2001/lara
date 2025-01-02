@@ -29,8 +29,9 @@ use std::thread;
 use url::Url;
 
 env_vars![
-    BOT_NAME
     ARCHIVE_DIR
+    BOT_NAME
+    FROM // https://httpwg.org/specs/rfc9110.html#field.from
 ];
 
 fn ctrlc_flag() -> Arc<AtomicBool> {

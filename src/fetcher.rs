@@ -60,6 +60,8 @@ pub struct Fetcher {
     archive_file_cnt: u32,
     archive_file_bytes_written: usize,
     agent: Agent,
+    /// FROM header for requests
+    from: String,
     politeness: HashMap<String, Politeness>,
 }
 
@@ -119,9 +121,10 @@ impl Fetcher {
         Fetcher {
             archive_dir,
             archive_file: None,
-            archive_file_cnt: 0,
+            archive_file_cnt: 0, // TODO make this an option and search for last file of current job in case of NONE
             archive_file_bytes_written: 0,
             agent,
+            from: FROM.get(),
             politeness: HashMap::new(),
         }
     }
@@ -144,7 +147,8 @@ impl Fetcher {
         politeness.wait();
         let start_systemtime = SystemTime::now();
         let start_instant = Instant::now();
-        let result = self.agent.get(url.to_string()).call();
+        let result = self.agent.get(url.to_string())
+            .header("FROM", self.from.clone()).call();
         let duration = start_instant.elapsed();
 
         let mut response = result?;

@@ -1,5 +1,57 @@
 TODO: https://doc.rust-lang.org/rustdoc/
 
+** database schema
+*** crawl job
+- get job with lease
+- update lease ( can be done by work manager by observing url frontier of crawl job?
+*** url frontier
+
+**** url priority
+
+- domain crossing hops instead of external depth
+- depth in parallel to priority to have absolute crawl frontier
+- signals:
+  - sitemap.xml itself and linked sitemaps have constant prio 1
+  - priority of find location
+  - number of urls on the find location
+  - number of query params
+  - number of path elements
+  - url origin type:
+    - crawl seed
+    - url is sitemap location (from robots.txt or from standard)
+    - url found as link alternate feed
+    - url from feed
+    - url from HTML body
+    - url from css/js tag
+    - url from img tag
+    - url from redirect of depth N
+
+- properties
+  - priority from sitemaps is between 0 < p <= 1
+  - query params are worse than path elements
+  - remaining depth goes down
+
+**** url to crawl map
+
+- stealing of work possible if crawl A already crawls an URL external to crawl B?
+  Or rather work injection, if a crawl for a domain exists?
+
+**** queries
+
+- insert initial URL(s)
+- Insert URLs found
+  - only if URLs does not exist yet
+
+- get next uncrawled url
+  - order by priority
+  - round robin over URLs
+- set url to crawled
+
+*** crawle archive
+
+- get archived pages for URL
+- get all archived URLs for domain below path
+
 ** crates to use
 - https://crates.io/crates/scraper - HTML parsing and querying with CSS selectors
 - https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
@@ -34,6 +86,9 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
 
 ** TODO
+- search topics
+  - "focused crawling"
+- https://developers.google.com/search/docs/crawling-indexing
 *** Canonical Link Element
 - https://en.wikipedia.org/wiki/Canonical_link_element
 *** URL normalization
@@ -62,6 +117,11 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://github.com/iipc - International Internet Preservation Consortium
   - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
 
+*** postgres
+
+- https://www.postgresguide.com
+- https://github.com/elierotenberg/coding-styles/blob/master/postgres.md
+
 *** crates
 - https://crates.io/crates/fetcher Automatic news fetching and parsing
 - https://crates.io/crates/httptest HTTP testing facilities including a mock server
@@ -81,6 +141,8 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/metrics-dashboard uses poem and metrics
 - https://crates.io/crates/metrics_server
 - https://crates.io/crates/memberlist-core - Gossip protocol for cluster membership
+- displaydoc derive macro for the standard library’s core::fmt::Display, especially for errors
+- scopeguard run a given closure when it goes out of scope (like defer in D)
 
 *** HTML content / article extraction
 
