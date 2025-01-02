@@ -1,6 +1,6 @@
 //! Crawler
 //!
-//! - Consumes urls from url_frontier
+//! - Consumes urls from `url_frontier`
 //! - respects robots.txt
 //! - checks sitemaps.xml
 //! - writes WARC archive of crawled urls

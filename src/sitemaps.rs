@@ -1,5 +1,5 @@
 use crate::fetcher::Fetcher;
-use crate::url_frontier::{UrlFrontier, UrlFrontierVec};
+use crate::url_frontier::UrlFrontier;
 use anyhow::Result;
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
@@ -11,7 +11,7 @@ pub fn run(
     url: &Url,
     sitemap_urls: &mut Vec<Url>,
     fetcher: &mut Fetcher,
-    url_frontier: &mut UrlFrontierVec,
+    url_frontier: &mut UrlFrontier,
 ) -> Result<u32> {
     let mut urls_count = 0;
     if sitemap_urls.is_empty() {
@@ -31,7 +31,7 @@ pub fn run(
     Ok(urls_count)
 }
 
-fn parse(body_str: &str, url_frontier: &mut UrlFrontierVec) -> (Vec<Url>, u32) {
+fn parse(body_str: &str, url_frontier: &mut UrlFrontier) -> (Vec<Url>, u32) {
     // TODO can we get the body as a stream?
     // https://users.rust-lang.org/t/how-to-stream-reqwest-response-to-a-gzip-decoder/69706/4
     // TODO implement file size restriction of 50 MB

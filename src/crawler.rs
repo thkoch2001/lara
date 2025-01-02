@@ -13,7 +13,7 @@ use crate::env_config::*;
 use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::sitemaps;
-use crate::url_frontier::{UrlFrontier, UrlFrontierVec};
+use crate::url_frontier::UrlFrontier;
 
 use anyhow::Result;
 use select::document::Document;
@@ -38,7 +38,7 @@ pub struct Crawler {
     fetcher: Fetcher,
     robotstxt_cache: RobotsTxtCache<Robot>,
     shutdown_flag: Arc<AtomicBool>,
-    url_frontier: UrlFrontierVec,
+    url_frontier: UrlFrontier,
 }
 
 struct Outlink {
@@ -55,7 +55,7 @@ impl Crawler {
             fetcher: Fetcher::new(&bot_name),
             robotstxt_cache: RobotsTxtCache::new(SystemTime::now()),
             shutdown_flag,
-            url_frontier: UrlFrontierVec::new(),
+            url_frontier: UrlFrontier::new(),
         }
     }
 

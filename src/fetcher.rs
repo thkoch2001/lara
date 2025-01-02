@@ -1,6 +1,6 @@
+use crate::env_config::*;
 use anyhow::Result;
 use chrono::prelude::*;
-use crate::env_config::*;
 use flate2::{write::GzEncoder, Compression};
 use http::{HeaderMap, StatusCode, Version};
 use simple_moving_average::{NoSumSMA, SMA};
@@ -40,11 +40,11 @@ impl Politeness {
     pub fn update(&mut self, fr: &FetchResult) {
         match fr.status.as_u16() {
             200 => {
-                self.duration_avg.add_sample(std::cmp::max(fr.duration, MIN_FETCH_DURATION));
+                self.duration_avg
+                    .add_sample(std::cmp::max(fr.duration, MIN_FETCH_DURATION));
                 self.until = fr.start.add(self.duration_avg.get_average() * 3);
             }
             429 => todo!(),
-            404 => (),
             _ => (), // todo
         }
     }
@@ -97,7 +97,12 @@ impl FetchResult {
 impl Fetcher {
     pub fn new(bot_name: &str) -> Fetcher {
         let archive_dir = ARCHIVE_DIR.parse::<PathBuf>();
-        let m = archive_dir.metadata().expect(&format!("Could not get metadata of ARCHIVE_DIR: {}", archive_dir.display()));
+        let m = archive_dir.metadata().unwrap_or_else(|_| {
+            panic!(
+                "Could not get metadata of ARCHIVE_DIR: {}",
+                archive_dir.display()
+            )
+        });
         assert!(m.is_dir(), "Not a dir: {}", archive_dir.display());
 
         // TODO Get URL from a better place, e.g. Cargo.toml?
@@ -143,12 +148,18 @@ impl Fetcher {
     pub fn fetch(&mut self, url: &Url) -> Result<FetchResult> {
         debug!("Fetching {url}");
         // todo clean old entries from politeness HashMap
-        let politeness = self.politeness.entry(url.authority().to_string()).or_default();
+        let politeness = self
+            .politeness
+            .entry(url.authority().to_string())
+            .or_default();
         politeness.wait();
         let start_systemtime = SystemTime::now();
         let start_instant = Instant::now();
-        let result = self.agent.get(url.to_string())
-            .header("FROM", self.from.clone()).call();
+        let result = self
+            .agent
+            .get(url.to_string())
+            .header("FROM", self.from.clone())
+            .call();
         let duration = start_instant.elapsed();
 
         let mut response = result?;
@@ -160,7 +171,8 @@ impl Fetcher {
 
         debug!(
             "fetched with status {} in {} ms: {url}",
-            response.status(), duration.as_millis()
+            response.status(),
+            duration.as_millis()
         );
         let status = response.status();
         let http_version = response.version();
@@ -186,7 +198,11 @@ impl Fetcher {
     // TODO: directly compress the archive file
     fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
         if self.archive_file.is_none() {
-            let path = format!("{}/archive_{:03}.warc.gz", self.archive_dir.display(), self.archive_file_cnt);
+            let path = format!(
+                "{}/archive_{:03}.warc.gz",
+                self.archive_dir.display(),
+                self.archive_file_cnt
+            );
             debug!("Starting new warc file: {path}");
             let file = File::create(path)?;
             let gzip_encoder = GzEncoder::new(file, Compression::best());

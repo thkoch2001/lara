@@ -1,33 +1,33 @@
+//! URL frontier tells crawlers which URL to crawl next and eliminates duplicate
+//! URLs.
+//!
+//! See also:
+//! - [URL Frontier chapter][itir] in Introduction to Information Retrieval
+//! - [Crawler-Commons URL frontier](https://github.com/crawler-commons/url-frontier)
+//!
+//! [itir]: https://nlp.stanford.edu/IR-book/html/htmledition/the-url-frontier-1.html
+
 use std::collections::HashMap;
 use url::Url;
 
-pub trait UrlFrontier {
-    fn get_url(&mut self) -> Option<Url>;
-
-    fn put_url(&mut self, url: Url);
-}
-
-#[allow(clippy::module_name_repetitions)]
-pub struct UrlFrontierVec {
+pub struct UrlFrontier {
     urls: Vec<Url>,
     url_data: HashMap<String, Option<()>>,
 }
 
-impl UrlFrontierVec {
+impl UrlFrontier {
     pub fn new() -> Self {
-        UrlFrontierVec {
+        UrlFrontier {
             urls: vec![],
             url_data: HashMap::new(),
         }
     }
-}
 
-impl UrlFrontier for UrlFrontierVec {
-    fn get_url(&mut self) -> Option<Url> {
+    pub fn get_url(&mut self) -> Option<Url> {
         self.urls.pop()
     }
 
-    fn put_url(&mut self, url: Url) {
+    pub fn put_url(&mut self, url: Url) {
         let url_string = url.to_string();
         if self.url_data.contains_key(&url_string) {
             return;

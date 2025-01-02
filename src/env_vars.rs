@@ -1,13 +1,15 @@
 //! TODO
 //! It would be nice to also declare optional types and default values:
-//! '''
-//! env_vars!(
-//!   ARCHIVE_DIR std::path::PatBuf,
-//!   TIMEOUT u32 "60000",
-//!   BOT_NAME,
-//!   BOT_URL "https://..."
-//! );
+//!
+//!     env_vars!(
+//!       ARCHIVE_DIR std::path::PatBuf,
+//!       TIMEOUT u32 "60000",
+//!       BOT_NAME,
+//!       BOT_URL "https://..."
+//!     );
+//!
 //! But I did not manage to write the macro this way.
+//! <https://stackoverflow.com/questions/76567540/rust-macro-count-repetitions-of-nested-match>
 
 // source: https://veykril.github.io/tlborm/decl-macros/building-blocks/counting.html
 pub const fn count_helper<const N: usize>(_: [(); N]) -> usize {
@@ -99,7 +101,6 @@ macro_rules! evwc {
         }
     }
 }
-
 
 macro_rules! env_vars {
   ( $($env_var:tt)+ ) => (evwc!(count_tts!($($env_var)+); $($env_var)+ );)
