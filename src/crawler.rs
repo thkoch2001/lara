@@ -9,18 +9,17 @@
 //! - <https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate>
 
 use crate::clock;
-use crate::env_config::*;
+use crate::env_config::BOT_NAME;
 use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::sitemaps;
 use crate::url_frontier::UrlFrontier;
 
+use crate::signal_handler::SignalHandler;
 use anyhow::Result;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::time::SystemTime;
 use texting_robots::Robot;
 use url::{ParseError, Url};
@@ -37,7 +36,7 @@ pub struct Crawler {
     bot_name: String,
     fetcher: Fetcher,
     robotstxt_cache: RobotsTxtCache<Robot>,
-    shutdown_flag: Arc<AtomicBool>,
+    signal_handler: SignalHandler,
     url_frontier: UrlFrontier,
 }
 
@@ -48,13 +47,13 @@ struct Outlink {
 }
 
 impl Crawler {
-    pub fn new(shutdown_flag: Arc<AtomicBool>) -> Self {
+    pub fn new(signal_handler: SignalHandler) -> Self {
         let bot_name = BOT_NAME.get();
         Crawler {
             bot_name: bot_name.clone(),
             fetcher: Fetcher::new(&bot_name),
             robotstxt_cache: RobotsTxtCache::new(SystemTime::now()),
-            shutdown_flag,
+            signal_handler,
             url_frontier: UrlFrontier::new(),
         }
     }
@@ -69,8 +68,9 @@ impl Crawler {
         )?;
         debug!("Urls found from sitemaps: {urls_from_sitemaps_count}");
 
+        let grace = self.signal_handler.grace();
         while let Some(url) = self.url_frontier.get_url() {
-            if self.shutdown_flag.load(Ordering::Relaxed) {
+            if grace.is_interrupted() {
                 break;
             }
 

@@ -1,4 +1,4 @@
-use crate::env_config::*;
+use crate::env_config::{ARCHIVE_DIR, FROM};
 use anyhow::Result;
 use chrono::prelude::*;
 use flate2::{write::GzEncoder, Compression};
