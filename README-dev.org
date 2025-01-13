@@ -87,6 +87,12 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 
 ** TODO
 - search topics
+  - "crawling strategy"
+    - https://frontera.readthedocs.io
+      - Crawling strategies
+    - https://stackoverflow.com/questions/10331738/strategy-for-how-to-crawl-index-frequently-updated-webpages
+      - "re-crawl strategy" or "page refresh policy"
+  - https://ssrg.eecs.uottawa.ca/docs/Benjamin-Thesis.pdf Strategy for Efficient Crawling of Rich Internet Applications
   - "focused crawling"
 - https://developers.google.com/search/docs/crawling-indexing
 *** Canonical Link Element
@@ -99,7 +105,14 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - https://github.com/brave/brave-browser/wiki/Query-String-Filter
 - https://gitlab.com/ClearURLs/ClearUrls
   - https://gitlab.com/ClearURLs/rules -> data.min.json -> "globalRules"
-
+**** crates
+- query_map - generic wrapper around HashMap<String, Vec<String>> to handle different transformations like URL query strings
+- clearurl - implementation for ClearURL
+- clearurls - rm tracking params
+- qstring - query string parser
+- shucker - Tracking-param filtering library, designed to strip URLs down to their canonical forms
+- urlnorm - url normalization
+- url-cleaner - rm tracking garbage
 ** compiling with openssl on Debian
 
 https://github.com/sfackler/rust-openssl/issues/2333
@@ -117,12 +130,45 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://github.com/iipc - International Internet Preservation Consortium
   - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
 
+
+*** protocols in general
+- https://sans-io.readthedocs.io/how-to-sans-io.html
+  - [[https://www.youtube.com/watch?v=Kmz8ODolnDg][Niri WM]] wurde nach sansi-io Prinzipien programmiert (handgeschriebene englische Untertitel des Autors)
+
 *** postgres
 
+- https://github.com/dhamaniasad/awesome-postgres
 - https://www.postgresguide.com
 - https://github.com/elierotenberg/coding-styles/blob/master/postgres.md
+**** postgres crates
+- https://github.com/sfackler/rust-postgres
+  - rust wire protocol but uses tokio even in synchronous client
+  - probably problems due to async? https://github.com/sfackler/rust-postgres/issues/725
+  - postgres-protocol, postgres-types do not depend on tokio
+- https://crates.io/crates/pgwire
+  - recomends rust-postgres from sfackler for clients, focuses on servers
+  - depends on tokio
+- diesel
+  - uses pq_sys C wrapper for libpg
+  - not pub
+  - no support for notifications
+  - previous request for LISTEN https://github.com/diesel-rs/diesel/issues/2166
+  - https://docs.diesel.rs/2.2.x/src/diesel/pg/connection/raw.rs.html
+  - issues
+    - [[https://github.com/diesel-rs/diesel/issues/2084][Removing libpq (to enable async)]]
+    - [[https://github.com/diesel-rs/diesel/issues/399][Async I/O]]
+    - [[https://github.com/diesel-rs/diesel/issues/2071][Postgres: We should avoid sending one query per custom type bind]] enum!
+    - [[https://github.com/diesel-rs/diesel/issues/2127][PostgreSQL Large Objects]] - would require access to internals?
+    - testing https://github.com/diesel-rs/diesel/issues/1549
+
+**** LISTEN/NOTIFY with postgres, diesel
+- https://github.com/diesel-rs/diesel/pull/4420
+- waiting for notifications is more involved as it requires selecting a fd
+  - https://blog.pjam.me/posts/select-syscall-in-rust/
+  - crates nix or rustix help
 
 *** crates
+- https://github.com/rinja-rs/askama Type-safe, compiled Jinja-like templates
 - https://crates.io/crates/fetcher Automatic news fetching and parsing
 - https://crates.io/crates/httptest HTTP testing facilities including a mock server
 - https://github.com/lipanski/mockito HTTP mocking for Rust! https://zupzup.org/rust-http-testing/
@@ -146,6 +192,7 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 
 *** HTML content / article extraction
 
+- telegram's [[https://instantview.telegram.org/][instantview]]
 - https://github.com/grangier/python-goose
 - https://pkg.go.dev/github.com/thatguystone/swan
 - https://crates.io/crates/extrablatt
