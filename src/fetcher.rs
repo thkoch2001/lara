@@ -245,7 +245,7 @@ impl Fetcher {
         headers_bytes.extend(b"\r\n");
 
         cnt += w.write(b"WARC/1.1\r\nWARC-Type: response\r\nContent-Type: application/http; msgtype=response\r\nWARC-Record-ID: ")?;
-        cnt += w.write(Uuid::new_v4().to_urn().to_string().as_bytes())?;
+        cnt += w.write(Uuid::new_v4().urn().to_string().as_bytes())?;
         cnt += w.write(b"\r\nWARC-Target-URI: ")?;
         cnt += w.write(url.to_string().as_bytes())?;
         cnt += w.write(b"\r\nContent-Length: ")?;
