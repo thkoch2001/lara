@@ -22,10 +22,11 @@ mod fetcher;
 mod robotstxt_cache;
 mod signal_handler;
 mod sitemaps;
+mod url_extractor;
 mod url_frontier;
+mod url_util;
 
 use std::thread;
-use url::Url;
 
 env_vars![
     ARCHIVE_DIR
@@ -44,7 +45,7 @@ fn main() {
         let signal_handler = signal_handler::SignalHandler::register();
 
         let mut crawler = crawler::Crawler::new(signal_handler);
-        if let Err(e) = crawler.run(&Url::parse("https://de.populus.wiki").unwrap()) {
+        if let Err(e) = crawler.run() {
             error!("{e:?}");
         }
     });

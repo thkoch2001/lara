@@ -10,9 +10,11 @@
 use std::collections::HashMap;
 use url::Url;
 
+use crate::crawler::{Inlink, Outlink, UrlItem};
+
 pub struct UrlFrontier {
     urls: Vec<Url>,
-    url_data: HashMap<String, Option<()>>,
+    url_data: HashMap<String, Inlink>,
 }
 
 impl UrlFrontier {
@@ -23,16 +25,25 @@ impl UrlFrontier {
         }
     }
 
-    pub fn get_url(&mut self) -> Option<Url> {
-        self.urls.pop()
+    pub fn get_item(&mut self) -> Option<UrlItem> {
+        self.urls.pop().map(|url| UrlItem {
+            i: vec![self.url_data.get(&url.to_string()).unwrap().clone()],
+            url,
+        })
     }
 
-    pub fn put_url(&mut self, url: Url) {
-        let url_string = url.to_string();
+    pub fn put_outlinks(&mut self, _url: &Url, outlinks: &Vec<Outlink>) {
+        for outlink in outlinks {
+            self.put_outlink(outlink);
+        }
+    }
+
+    pub fn put_outlink(&mut self, outlink: &Outlink) {
+        let url_string = outlink.url.to_string();
         if self.url_data.contains_key(&url_string) {
             return;
         }
-        self.urls.push(url);
-        self.url_data.insert(url_string, Some(()));
+        self.urls.push(outlink.url.clone());
+        self.url_data.insert(url_string, outlink.i.clone());
     }
 }

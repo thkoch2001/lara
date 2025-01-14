@@ -16,15 +16,7 @@ TODO: https://doc.rust-lang.org/rustdoc/
   - number of urls on the find location
   - number of query params
   - number of path elements
-  - url origin type:
-    - crawl seed
-    - url is sitemap location (from robots.txt or from standard)
-    - url found as link alternate feed
-    - url from feed
-    - url from HTML body
-    - url from css/js tag
-    - url from img tag
-    - url from redirect of depth N
+  - outlink context
 
 - properties
   - priority from sitemaps is between 0 < p <= 1
@@ -57,6 +49,23 @@ TODO: https://doc.rust-lang.org/rustdoc/
 - https://crates.io/crates/anyhow - Flexible concrete Error type built on std::error::Error
 - https://github.com/utkarshkukreti/select.rs - extract data from HTML
 - https://crates.io/crates/rouille - mini HTTP server for status and control pages
+** MIME Types
+- There's a standard! [[https://mimesniff.spec.whatwg.org][MIME Sniffing]] via [[https://en.wikipedia.org/wiki/Content_sniffing][Content Sniffing]] (WP)
+- https://crates.io/crates/mime_classifier Implementation of the std from Servo
+- [[https://web.archive.org/web/20210515165437/https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types][How Mozilla determines MIME Types]]
+
+Input:
+
+1. Mime type declaration pointing to URL:
+   - <link type="text/css" rel="stylesheet" href="..."
+   - <a href="..." type="foo/bar">
+   - <img -> img sniffer
+2. Mime type from HTTP header, overriding 1.
+   ? file extension?
+3. Sniffing, if no HTTP header
+
+- [[https://web.archive.org/web/20210129124528/https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms775147(v=vs.85)][MIME Type Detection in Windows Internet Explorer]]
+
 ** robots.txt
 
 [[https://www.rfc-editor.org/rfc/rfc9309.html][RFC 9309]], [[https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt][Google]], [[https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en][Yandex]] docs, [[https://www.robotstxt.org][robotstxt.org]]

@@ -12,17 +12,16 @@ use crate::clock;
 use crate::env_config::BOT_NAME;
 use crate::fetcher::Fetcher;
 use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
-use crate::sitemaps;
 use crate::url_frontier::UrlFrontier;
 
 use crate::signal_handler::SignalHandler;
+use crate::url_extractor;
+use crate::url_util::{is_domain_root, with_path_only};
 use anyhow::Result;
-use select::document::Document;
-use select::predicate::{Attr, Name, Predicate};
 use std::rc::Rc;
 use std::time::SystemTime;
 use texting_robots::Robot;
-use url::{ParseError, Url};
+use url::Url;
 
 #[derive(PartialEq)]
 pub enum CheckResult {
@@ -40,10 +39,40 @@ pub struct Crawler {
     url_frontier: UrlFrontier,
 }
 
-struct Outlink {
-    // TODO https://en.wikipedia.org/wiki/Nofollow
-    rel: Option<String>,
-    url: Url,
+/// These contexts are not the ones from [Mime Sniffing
+/// standard](https://mimesniff.spec.whatwg.org) but should be possible to
+/// map.
+#[derive(Default, Clone)]
+pub enum Context {
+    #[default]
+    Other,
+    Img,
+    Style,
+    Script,
+    /// e.g. <head><link rel="alternate" type="application/rss+xml" href="..." />
+    Feed,
+    /// implicit from domain root or from robots.txt
+    Sitemap,
+}
+
+#[derive(Default, Clone)]
+pub struct Inlink {
+    /// TODO <https://en.wikipedia.org/wiki/Nofollow>
+    /// or PREV/NEXT, however we're only interested in NEXT
+    pub rel: Option<String>,
+    pub context: Context,
+    pub redirect_count: usize,
+    pub content_type: Option<String>,
+}
+
+pub struct Outlink {
+    pub url: Url,
+    pub i: Inlink,
+}
+
+pub struct UrlItem {
+    pub url: Url,
+    pub i: Vec<Inlink>,
 }
 
 impl Crawler {
@@ -58,23 +87,16 @@ impl Crawler {
         }
     }
 
-    pub fn run(&mut self, url: &Url) -> Result<()> {
-        let mut robotstxt_sitemaps = self.get_sitemaps_from_robotstxt(url)?;
-        let urls_from_sitemaps_count = sitemaps::run(
-            url,
-            &mut robotstxt_sitemaps,
-            &mut self.fetcher,
-            &mut self.url_frontier,
-        )?;
-        debug!("Urls found from sitemaps: {urls_from_sitemaps_count}");
-
+    pub fn run(&mut self) -> Result<()> {
+        // todo
+        self.url_frontier.put_outlink(&Outlink {
+            url: Url::parse("https://de.populus.wiki")?,
+            i: Inlink::default(),
+        });
         let grace = self.signal_handler.grace();
-        while let Some(url) = self.url_frontier.get_url() {
-            if grace.is_interrupted() {
-                break;
-            }
-
-            match self.check_robotstxt(&url)? {
+        while let Some(item) = self.url_frontier.get_item() {
+            let url = &item.url;
+            match self.check_robotstxt(url)? {
                 CheckResult::Allowed => (),
                 CheckResult::Disallowed => {
                     info!("Crawling of {url} forbidden by robots.txt");
@@ -87,35 +109,65 @@ impl Crawler {
                 }
             }
 
-            let fetchresult = self.fetcher.fetch(&url.clone())?;
-
-            if urls_from_sitemaps_count == 0 {
-                let document = Document::from(fetchresult.body_str().as_ref());
-                let outlinks = find_outlinks(&document, &url);
-                for outlink in outlinks {
-                    self.url_frontier.put_url(outlink.url);
+            let fr = self.fetcher.fetch(&item.url.clone())?;
+            let mut outlinks = url_extractor::extract_outlinks(&item, &fr)?;
+            debug!("extracted {} outlinks from {url}", outlinks.len());
+            if is_domain_root(url) {
+                debug!("Adding sitemap outlinks for domain root: {url}");
+                let mut sitemap_outlinks = self.get_sitemaps_from_robotstxt(url)?;
+                if sitemap_outlinks.is_empty() {
+                    sitemap_outlinks = vec![Outlink {
+                        url: with_path_only(url, "sitemap.xml"),
+                        i: Inlink {
+                            context: Context::Sitemap,
+                            ..Inlink::default()
+                        },
+                    }];
                 }
+                outlinks.append(&mut sitemap_outlinks);
+            }
+            let outlinks = self.robotstxt_filter_outlinks(outlinks);
+
+            self.url_frontier.put_outlinks(&item.url, &outlinks);
+
+            if grace.is_interrupted() {
+                break;
             }
         }
         Ok(())
     }
 
     // robots.txt stuff below
-    pub fn get_sitemaps_from_robotstxt(&mut self, url: &Url) -> Result<Vec<Url>> {
-        let mut sitemap_urls: Vec<Url> = Vec::new();
-        Ok(match self.get_or_fetch_robotstxt(url)? {
-            AR::Ok(robot) => {
-                for sitemap_url in &robot.sitemaps {
-                    if let Ok(url) = Url::parse(sitemap_url) {
-                        sitemap_urls.push(url);
-                    }
+    pub fn get_sitemaps_from_robotstxt(&mut self, url: &Url) -> Result<Vec<Outlink>> {
+        let mut outlinks: Vec<Outlink> = Vec::new();
+        if let AR::Ok(robot) = self.get_or_fetch_robotstxt(url)? {
+            for sitemap_url in &robot.sitemaps {
+                if let Ok(url) = Url::parse(sitemap_url) {
+                    outlinks.push(Outlink {
+                        url,
+                        i: Inlink {
+                            context: Context::Sitemap,
+                            ..Inlink::default()
+                        },
+                    });
                 }
-                sitemap_urls
             }
-            // TODO some more error handling?
-            // - set crawl status to retry on 5xx error?
-            _ => sitemap_urls,
-        })
+        }
+        Ok(outlinks)
+    }
+
+    fn robotstxt_filter_outlinks(&mut self, outlinks: Vec<Outlink>) -> Vec<Outlink> {
+        outlinks
+            .into_iter()
+            .filter(|o| match self.check_robotstxt(&o.url) {
+                Ok(CheckResult::Allowed) => true,
+                Err(e) => {
+                    info!("Error while filtering outlink {} {e:?}", &o.url);
+                    false
+                }
+                _ => false,
+            })
+            .collect()
     }
 
     pub fn check_robotstxt(&mut self, url: &Url) -> Result<CheckResult> {
@@ -159,8 +211,7 @@ impl Crawler {
             };
         }
 
-        let scheme = url.scheme();
-        let robots_url = Url::parse(format!("{scheme}://{authority}/robots.txt").as_ref())?;
+        let robots_url = with_path_only(url, "robots.txt");
         let fetchresult = self.fetcher.fetch(&robots_url)?;
 
         let ar = match fetchresult.status.as_u16() {
@@ -176,47 +227,4 @@ impl Crawler {
             .insert(authority, ar.clone(), fetchresult.start);
         Ok(ar)
     }
-}
-
-fn find_outlinks(document: &Document, base: &Url) -> Vec<Outlink> {
-    let a_nodes = document.find(Name("a").and(Attr("href", ())));
-
-    let mut outlinks: Vec<Outlink> = Vec::new();
-    for node in a_nodes {
-        // We already filtered for a nodes with href attribute
-        // url must be shorter than 2048 characters according to https://en.m.wikipedia.org/wiki/Sitemaps
-        let href = node.attr("href").unwrap();
-
-        if let Some(mut url) = match Url::parse(href) {
-            Ok(url) if url.scheme() == "http" || url.scheme() == "https" => Some(url),
-            Ok(_) => None,
-            Err(ParseError::RelativeUrlWithoutBase) => match base.join(href) {
-                Ok(url) => Some(url),
-                Err(err) => {
-                    debug!("{:?}: {href}", err);
-                    None
-                }
-            },
-            Err(err) => {
-                debug!("{:?}: {href}", err);
-                None
-            }
-        } {
-            if url.fragment().is_some() {
-                url.set_fragment(None);
-            }
-            if url.to_string() == base.to_string() {
-                continue;
-            }
-            // TODO remove
-            if url.host_str() != Some("de.populus.wiki") {
-                continue;
-            }
-            outlinks.push(Outlink {
-                url,
-                rel: node.attr("rel").map(std::string::ToString::to_string),
-            });
-        }
-    }
-    outlinks
 }

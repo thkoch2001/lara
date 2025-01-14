@@ -1,3 +1,6 @@
+// There's a std: [Fetch](https://fetch.spec.whatwg.org). However it doesn't
+// seem to apply to a crawler.
+
 use crate::env_config::{ARCHIVE_DIR, FROM};
 use anyhow::Result;
 use chrono::prelude::*;
