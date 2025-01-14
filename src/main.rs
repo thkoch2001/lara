@@ -21,8 +21,7 @@ mod env_vars;
 mod fetcher;
 mod robotstxt_cache;
 mod signal_handler;
-mod sitemaps;
-mod url_extractor;
+mod link_extractor;
 mod url_frontier;
 mod url_util;
 

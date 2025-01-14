@@ -7,9 +7,9 @@ use url::Url;
 
 use anyhow::Result;
 
-pub struct SitemapExtractor;
+pub(super) struct SitemapExtractor;
 
-impl crate::url_extractor::Extractor for SitemapExtractor {
+impl super::Extractor for SitemapExtractor {
     fn get_outlinks(&self, body_str: &str, _: &Url) -> Result<Vec<Outlink>> {
         debug!("extract sitemap");
         // TODO can we get the body as a stream?

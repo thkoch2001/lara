@@ -8,3 +8,7 @@ pub fn with_path_only(url: &Url, path: &str) -> Url {
     Url::parse(format!("{}://{}/{path}", url.scheme(), url.authority()).as_ref())
         .expect("Started from a valid URL")
 }
+
+pub fn is_http_s(url: &Url) -> bool {
+    url.scheme() == "http" || url.scheme() == "https"
+}

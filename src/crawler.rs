@@ -15,7 +15,7 @@ use crate::robotstxt_cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use crate::url_frontier::UrlFrontier;
 
 use crate::signal_handler::SignalHandler;
-use crate::url_extractor;
+use crate::link_extractor::extract_outlinks;
 use crate::url_util::{is_domain_root, with_path_only};
 use anyhow::Result;
 use std::rc::Rc;
@@ -110,7 +110,7 @@ impl Crawler {
             }
 
             let fr = self.fetcher.fetch(&item.url.clone())?;
-            let mut outlinks = url_extractor::extract_outlinks(&item, &fr)?;
+            let mut outlinks = extract_outlinks(&item, &fr)?;
             debug!("extracted {} outlinks from {url}", outlinks.len());
             if is_domain_root(url) {
                 debug!("Adding sitemap outlinks for domain root: {url}");
