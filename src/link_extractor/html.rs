@@ -1,9 +1,9 @@
+use crate::crawler::{Inlink, Outlink};
+use crate::url_util::is_http_s;
+use anyhow::Result;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
-use anyhow::Result;
 use url::{ParseError, Url};
-use crate::url_util::is_http_s;
-use crate::crawler::{Inlink, Outlink};
 
 pub(super) struct HtmlExtractor;
 

@@ -5,14 +5,14 @@
 
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
 use crate::fetcher::FetchResult;
-use sitemap::SitemapExtractor;
 use html::HtmlExtractor;
+use sitemap::SitemapExtractor;
 
 use anyhow::Result;
 use url::Url;
 
-mod sitemap;
 mod html;
+mod sitemap;
 
 pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult) -> Result<Vec<Outlink>> {
     let inlink = get_inlink(&item.i);

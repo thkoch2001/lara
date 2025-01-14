@@ -11,7 +11,6 @@ pub(super) struct SitemapExtractor;
 
 impl super::Extractor for SitemapExtractor {
     fn get_outlinks(&self, body_str: &str, _: &Url) -> Result<Vec<Outlink>> {
-        debug!("extract sitemap");
         // TODO can we get the body as a stream?
         // https://users.rust-lang.org/t/how-to-stream-reqwest-response-to-a-gzip-decoder/69706/4
         // TODO implement file size restriction of 50 MB
@@ -56,7 +55,6 @@ impl super::Extractor for SitemapExtractor {
 
                         if let Some(outlink) = entry_to_outlink(&entry, context) {
                             // todo can use append here with Option?
-                            debug!("push");
                             outlinks.push(outlink);
                         }
                     }
@@ -69,7 +67,6 @@ impl super::Extractor for SitemapExtractor {
     }
 }
 fn entry_to_outlink(entry: &HashMap<String, String>, context: Context) -> Option<Outlink> {
-    debug!("e2o");
     if !entry.contains_key("loc") {
         return None;
     }

@@ -19,9 +19,9 @@ mod crawler;
 #[macro_use]
 mod env_vars;
 mod fetcher;
-mod robotstxt_cache;
-mod signal_handler;
 mod link_extractor;
+mod robotstxt;
+mod signal_handler;
 mod url_frontier;
 mod url_util;
 
