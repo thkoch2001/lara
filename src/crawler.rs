@@ -32,15 +32,22 @@ pub struct Crawler {
 /// map.
 #[derive(Default, Clone)]
 pub enum Context {
+    /// A link pointing to a sitemap, either found in robots.txt or the
+    /// default location /sitemap.xml.
+    Sitemap,
+    /// A link found in a sitemap
+    SitemapLink,
+    /// A link pointing to a syndication feed (RSS, ATOM), probably found in a
+    /// html HEAD LINK element:
+    /// `<head><link rel="alternate" type="application/rss+xml" href="..." />`
+    Feed,
+    /// A link found in a feed
+    FeedLink,
     #[default]
     Other,
     Img,
     Style,
     Script,
-    /// e.g. <head><link rel="alternate" type="application/rss+xml" href="..." />
-    Feed,
-    /// implicit from domain root or from robots.txt
-    Sitemap,
 }
 
 #[derive(Default, Clone)]

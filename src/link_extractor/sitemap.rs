@@ -48,7 +48,7 @@ impl super::Extractor for SitemapExtractor {
                     if let entry_name @ (b"url" | b"sitemap") = e.name().as_ref() {
                         in_entry = false;
                         let context = match entry_name {
-                            b"url" => Context::Other,
+                            b"url" => Context::SitemapLink,
                             b"sitemap" => Context::Sitemap,
                             _ => panic!("We already matched on this before!"),
                         };
@@ -76,6 +76,7 @@ fn entry_to_outlink(entry: &HashMap<String, String>, context: Context) -> Option
     };
 
     // TODO also use the other data, especially lastmod!
+    // https://doc.rust-lang.org/std/primitive.f32.html#method.clamp for sanitizing sitemap provided priority values
 
     Some(Outlink {
         url,

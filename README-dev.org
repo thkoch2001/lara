@@ -1,5 +1,7 @@
 TODO: https://doc.rust-lang.org/rustdoc/
 
+** duplicate detection
+- https://blog.nelhage.com/post/fuzzy-dedup
 ** database schema
 *** crawl job
 - get job with lease

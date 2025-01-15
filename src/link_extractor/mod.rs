@@ -6,18 +6,23 @@
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
 use crate::fetcher::FetchResult;
 use html::HtmlExtractor;
+use feed::FeedExtractor;
 use sitemap::SitemapExtractor;
 
 use anyhow::Result;
 use url::Url;
 
+mod feed;
 mod html;
 mod sitemap;
 
 pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult) -> Result<Vec<Outlink>> {
     let inlink = get_inlink(&item.i);
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
-    get_extractor(fr, &inlink).get_outlinks(fr.body_str().as_ref(), &item.url)
+    let extractor = get_extractor(fr, &inlink);
+    extractor.get_outlinks(fr.body_str().as_ref(), &item.url)
+    // Doesn't seem worthwile to look for links in HTTP header
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
 }
 
 fn get_inlink(links: &[Inlink]) -> Inlink {
@@ -29,9 +34,11 @@ fn get_inlink(links: &[Inlink]) -> Inlink {
 }
 
 fn get_extractor(_fr: &FetchResult, inlink: &Inlink) -> Box<dyn Extractor> {
+    // todo context alone is not enough to get the right extractor!
     match inlink.context {
         Context::Other => Box::new(HtmlExtractor),
         Context::Sitemap => Box::new(SitemapExtractor),
+        Context::Feed => Box::new(FeedExtractor),
         _ => todo!(),
     }
 }
