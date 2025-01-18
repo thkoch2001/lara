@@ -53,16 +53,16 @@ pub fn insert_urls(conn: &mut PgConnection, urls: &Vec<Url>) -> Result<usize> {
 
 pub fn select_crawl_urls(
     conn: &mut PgConnection,
-    domain: &str,
+    domain_name: &str,
     exclude_url_ids: &Vec<i32>,
 ) -> Result<Vec<(models::Url, models::Domain)>> {
-    use crate::db::schema::domain::dsl;
+    use crate::db::schema::domain::dsl::{domain, name};
     use crate::db::schema::url::dsl::{url, url_id};
     use diesel::dsl::not;
 
     Ok(url
-        .inner_join(dsl::domain)
-        .filter(dsl::name.eq(domain))
+        .inner_join(domain)
+        .filter(name.eq(domain_name))
         .filter(not(url_id.eq_any(exclude_url_ids)))
         .select((models::Url::as_select(), models::Domain::as_select()))
         .limit(10)
