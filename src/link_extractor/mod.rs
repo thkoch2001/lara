@@ -5,8 +5,8 @@
 
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
 use crate::fetcher::FetchResult;
-use html::HtmlExtractor;
 use feed::FeedExtractor;
+use html::HtmlExtractor;
 use sitemap::SitemapExtractor;
 
 use anyhow::Result;

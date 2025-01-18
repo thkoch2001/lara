@@ -56,8 +56,8 @@ pub struct Inlink {
     /// or PREV/NEXT, however we're only interested in NEXT
     pub rel: Option<String>,
     pub context: Context,
-    pub redirect_count: usize,
-    pub content_type: Option<String>,
+    pub _redirect_count: usize,
+    pub _content_type: Option<String>,
 }
 
 pub struct Outlink {
@@ -71,24 +71,19 @@ pub struct UrlItem {
 }
 
 impl Crawler {
-    pub fn new(signal_handler: SignalHandler) -> Self {
+    pub fn new(signal_handler: SignalHandler) -> Result<Self> {
         let bot_name = BOT_NAME.get();
-        Self {
+        Ok(Self {
             fetcher: Fetcher::new(&bot_name.clone()),
             robotstxt: RobotsTxt::new(&bot_name),
             signal_handler,
-            url_frontier: UrlFrontier::new(),
-        }
+            url_frontier: UrlFrontier::new()?,
+        })
     }
 
     pub fn run(&mut self) -> Result<()> {
-        // todo
-        self.url_frontier.put_outlink(&Outlink {
-            url: Url::parse("https://de.populus.wiki")?,
-            i: Inlink::default(),
-        });
         let grace = self.signal_handler.grace();
-        while let Some(item) = self.url_frontier.get_item() {
+        while let Some(item) = self.url_frontier.get_item()? {
             let url = &item.url;
             match self.robotstxt.check(url, &mut self.fetcher)? {
                 CheckResult::Allowed => (),
@@ -122,7 +117,7 @@ impl Crawler {
             }
             let outlinks = self.robotstxt.filter_outlinks(outlinks, &mut self.fetcher);
 
-            self.url_frontier.put_outlinks(&item.url, &outlinks);
+            self.url_frontier.put_outlinks(&item.url, &outlinks)?;
 
             if grace.is_interrupted() {
                 break;

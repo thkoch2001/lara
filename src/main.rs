@@ -18,6 +18,7 @@ mod clock;
 mod crawler;
 #[macro_use]
 mod env_vars;
+mod db;
 mod fetcher;
 mod link_extractor;
 mod robotstxt;
@@ -30,6 +31,7 @@ use std::thread;
 env_vars![
     ARCHIVE_DIR
     BOT_NAME
+    DB_URL
     FROM // https://httpwg.org/specs/rfc9110.html#field.from
 ];
 
@@ -43,7 +45,7 @@ fn main() {
     let t = thread::spawn(move || {
         let signal_handler = signal_handler::SignalHandler::register();
 
-        let mut crawler = crawler::Crawler::new(signal_handler);
+        let mut crawler = crawler::Crawler::new(signal_handler).expect("error");
         if let Err(e) = crawler.run() {
             error!("{e:?}");
         }

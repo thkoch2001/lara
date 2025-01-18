@@ -10,8 +10,8 @@ pub fn is_domain_root(url: &Url) -> bool {
 ///
 /// Examples:
 ///
-/// * robots.txt http://www.robotstxt.org
-/// * sitemap.xml https://www.sitemaps.org
+/// * robots.txt <http://www.robotstxt.org>
+/// * sitemap.xml <https://www.sitemaps.org>
 /// * favicon.ico
 ///
 /// [RFC 8615]: https://www.rfc-editor.org/rfc/rfc8615.html
@@ -23,4 +23,14 @@ pub fn with_path_only(url: &Url, path: &str) -> Url {
 /// Used by HTML link extractor to only collect links to HTTP resources
 pub fn is_http_s(url: &Url) -> bool {
     url.scheme() == "http" || url.scheme() == "https"
+}
+
+/// see also:
+/// <https://github.com/pydantic/pydantic-core/blob/main/src/url.rs>
+pub fn build(domain: &str, path: &str, query: Option<&str>) -> Url {
+    let mut s = format!("https://{domain}{path}");
+    if let Some(q) = query {
+        s.push_str(&format!("?{q}"));
+    }
+    Url::parse(&s).unwrap()
 }

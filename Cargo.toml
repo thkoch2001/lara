@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "*"
 chrono = "*"
 ctrlc = "*"
+diesel = { version = "*", features = ["postgres", "without-deprecated"], default-features = false }
 env_logger = "*"
 flate2 = "*"
 http = "*"
