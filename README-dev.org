@@ -141,7 +141,12 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://github.com/iipc - International Internet Preservation Consortium
   - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
 
-
+*** deployment
+- https://fosdem.org/2025/schedule/event/fosdem-2025-5366-nixops4-new-sustainable-platform-for-deployment-technology/
+*** marketing
+- https://fediversity.eu
+*** fetch scheduling, time series, forecast
+- https://fosdem.org/2025/schedule/event/fosdem-2025-4668-augurs-a-time-series-toolkit-for-rust
 *** protocols in general
 - https://sans-io.readthedocs.io/how-to-sans-io.html
   - [[https://www.youtube.com/watch?v=Kmz8ODolnDg][Niri WM]] wurde nach sansi-io Prinzipien programmiert (handgeschriebene englische Untertitel des Autors)

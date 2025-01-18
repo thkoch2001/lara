@@ -8,7 +8,7 @@ pub(super) struct FeedExtractor;
 // todo: also extract img, script, style, ...
 
 impl super::Extractor for FeedExtractor {
-    fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>> {
+    fn get_outlinks(&self, _body_str: &str, _base: &Url) -> Result<Vec<Outlink>> {
         debug!("todo: Feed extractor not yet done.");
         Ok(Vec::new())
     }
