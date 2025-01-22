@@ -64,3 +64,5 @@ feedback. Feedback is welcome!
 
 - Github? Git repos can be moved quickly. Github provides visibility.
 - "Lara"? Provisional name. My [second dog](https://photos.app.goo.gl/7u7NUC4iX6Dp5o986).
+
+Check [README-dev](./README-dev.org) for more details!

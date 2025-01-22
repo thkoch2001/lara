@@ -1,8 +1,93 @@
 TODO: https://doc.rust-lang.org/rustdoc/
 
+* Vision
+
+A network of small crawl, archive and index nodes. One node can consist of
+multiple machines but is administrated by one entity. Nodes crawl domains
+trusted by the node administrators:
+
+- to contain relevant content
+- to be easily crawlable
+  - require no execution of Javascript
+  - do not try to trick index ranking
+  - do not intentionally mislead crawlers
+
+Nodes serve earch queries from their local index and optionally forward them
+to other nodes and present search results of other nodes interleaved with
+local results. Trust and ranking of remote peers is constantly adapted.
+
+Node discovery is done by gossip or metadata from crawled web pages.
+
+Nodes also serve as a distributed internet archive for the crawled pages.
+
+** Long term vision
+
+TODO: Elaborate
+
+- Wikipedia is not trustworthy
+- Mediawiki is actually a restriction of the original idea for the
+  web. Mediawiki centralizes moderation of content. In the web everybody can
+  host a web page somewhere and declare that its content is relevant for one
+  or more keywords.
+- It is then the job of a search engine to propose a set of relevant web pages
+  for given keywords.
+- Web pages should provide a standardized APIs how to send patches for the
+  content of the page and how to see the page history. ATOM could help.
+- The actual hosting of web pages should also be distributed, e.g. IPFS to
+  help with archiving and censorship resistance.
+- Naming: check pet names and GNU Name system
+- All of this requires different browsers
+
+* Architectural Decision Log (ADL)
+** Programming Language: Rust
+
+A modern programming language can considerably enhance the productivity of a
+small team of skilled programmers. This can enable projects that would
+otherwise require an order of magnitude more not-so-skilled programmers
+working with "easier" languages like Go or Python.
+
+Haskell would have been the first choice.
+
+However Rust seems to have more libraries (indexing!) and is comparably modern
+as Haskell.
+
+Also the long term vision requires changes in browsers. There is a new browser
+project in rust (Servo).
+
+** Database: Postgres
+
+Installations might span mutliple machines but are not expected to grow above
+the capabilities that could be handled by one Postgres installation. Postgres
+itself can be scaled.
+
+SQL can replace a lot of complex client side code.
+
+Postgres should not host the index, nor the archive.
+
+** No async
+
+No async rust code is used. Async has no support for drop. (TODO: elaborate)
+
+** Partition crawlers by domain
+
+This is still experimental but looks stable:
+
+- easy to respect politeness
+- good compression of warc files
+
+* Links, Ideas, Stuff
+** p2p search
+*** peer trust
+- Check the search results returned by peers by asynchronous download of the
+  url and confirming the presence of the search terms in the result. Adapt
+  trust accordingly. (via YaCy Paper)
 ** duplicate detection
 - https://blog.nelhage.com/post/fuzzy-dedup
 ** database schema
+
+- advisory locks with diesel:
+  https://github.com/diesel-rs/diesel/discussions/3459
+
 *** crawl job
 - get job with lease
 - update lease ( can be done by work manager by observing url frontier of crawl job?
@@ -141,10 +226,15 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://github.com/iipc - International Internet Preservation Consortium
   - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
 
+*** p2p
+- https://secushare.org
+- https://dat-ecosystem.org
+
 *** deployment
 - https://fosdem.org/2025/schedule/event/fosdem-2025-5366-nixops4-new-sustainable-platform-for-deployment-technology/
 *** marketing
 - https://fediversity.eu
+- https://drewdevault.com/2020/11/17/Better-than-DuckDuckGo.html
 *** fetch scheduling, time series, forecast
 - https://fosdem.org/2025/schedule/event/fosdem-2025-4668-augurs-a-time-series-toolkit-for-rust
 *** protocols in general
