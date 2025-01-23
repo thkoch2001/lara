@@ -29,9 +29,11 @@ It is widely acknowledged, that the quality of Google search has declined:
 
 - The term "enshittification"[^3] has been created for this phenomenon.
 - lightning talk at Chaos Communication Congress 2023[^4]
+- Paper: Is Google Getting Worse? A Longitudinal Investigation of SEO Spam in Search Engines[^5]
 
 [^3]: 2023-07-28, Cory Doctorow: [Microincentives and Enshittification](https://pluralistic.net/2023/07/28/microincentives-and-enshittification)
 [^4]: 2023-12-28, Martin Hamilton: [Honey I federated the search engine - finding stuff online post-big tech](https://media.ccc.de/v/37c3-lightningtalks-58060-honey-i-federated-the-search-engine-finding-stuff-online-post-big-tech)
+[^5]: https://downloads.webis.de/publications/papers/bevendorff_2024a.pdf
 
 The paper [GOGGLES: Democracy dies in darkness, and so does the Web][Goggles]
 by the Brave Search Team discusses the issue of biases in search engines.

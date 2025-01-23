@@ -75,7 +75,90 @@ This is still experimental but looks stable:
 - easy to respect politeness
 - good compression of warc files
 
+* Other Search engine projects
+
+There are even more projects, e.g.:
+
+- Rohan Kumar's list: [[https://seirdy.one/posts/2021/03/10/search-engines-with-own-indexes][A look at search engines with their own indexes]]
+
+The search projects below are all open source, have their own crawler and
+development language is English.
+
+Notary other projects:
+
+- [[https://www.mojeek.com][Mojeek]]: not open source but big index
+- [[https://sese.yyj.moe][SeSe Engine]]: large, open source, but Chinese source code
+- [[https://clew.se][clew]]: has not yet released its code?
+
+| Project        | year  | lang   |
+|----------------+-------+--------|
+| indi.-search ✝ |       |        |
+| marginalia     |       |        |
+| mwmbl          |       |        |
+| PeARS          | <2016 | Python |
+| phinde         |       | PHP    |
+| searchmysite   |       |        |
+| stract         | ~2023 | rust   |
+| unobtanium     |       |        |
+| Wiby           |       | PHP    |
+| YaCy           | ~2003 | Java   |
+
+** indieweb-search
+
+[[https://github.com/capjamesg/indieweb-search][indieweb-search]] @capjamesg (archived)
+
+** marginalia
+- [[https://www.marginalia.nu][marginalia]] @MarginaliaSearch
+
+** mwmbl
+
+[[https://mwmbl.org][mwmbl]] @mwmbl @daoudclarke
+
+** PeARS
+
+- [[https://pearsproject.org][PeARS]] ([[https://github.com/PeARSearch][GitHub]]) @minimalparts
+
+Contact: https://aurelieherbelot.net
+
+- Conference Paper, April 2016: PeARS: a Peer-to-peer Agent for Reciprocated Search ([[https://doi.org/10.1145/2872518.2889369][doi]]) ([[https://aurelieherbelot.net/resources/papers/www2016_pears.pdf][pdf]])
+
+** phinde
+
+- [[https://github.com/cweiske/phinde][phinde]] @cweiske (only own domain + linked)
+
+** searchmysite
+
+- [[https://searchmysite.net][searchmysite]] @searchmysite @m-i-l
+
+** stract
+
+- [[https://github.com/StractOrg/stract][stract]] @StractOrg @mikkeldenker
+- 8.2.2024, 404 media: [[https://www.404media.co/this-guy-is-building-an-open-source-search-engine-in-real-time][This Guy Has Built an Open Source Search Engine as an
+  Alternative to Google in His Spare Time]] (behind free subscription wall)
+- 4.2.2024, Hackernews: [[https://news.ycombinator.com/item?id=39254172][Stract: Open-souce, non-profit search engine]]
+
+** unobtanium
+
+- [[https://codeberg.org/unobtanium][unobtanium]]
+
+** Wiby
+
+- [[https://wiby.me][Wiby]] @wibyweb
+
+** YaCy
+
+- [[https://yacy.net/][YaCy]] @Orbiter
+
 * Links, Ideas, Stuff
+** crawlers
+- https://github.com/Nandakumartc/scraper-crawler List of scraper,crawler,spider in different languages
+** indexing
+*** ranking
+- BM25
+  - https://en.wikipedia.org/wiki/Okapi_BM25
+  - [[https://www.alexmolas.com/2024/02/05/a-search-engine-in-80-lines.html][A search engine in 80 lines of Python]]
+  - https://blog.clew.se/posts/im-losing-faith-in-bm25
+
 ** p2p search
 *** peer trust
 - Check the search results returned by peers by asynchronous download of the
