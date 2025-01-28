@@ -1,3 +1,4 @@
+use url::ParseError;
 use url::Url;
 
 /// Used by crawler to give special treatment to main site of a domain
@@ -33,4 +34,26 @@ pub fn build(domain: &str, path: &str, query: Option<&str>) -> Url {
         s.push_str(&format!("?{q}"));
     }
     Url::parse(&s).unwrap()
+}
+
+/// try to parse href to a valid outlink found at base
+pub fn parse_outlink(base: &Url, href: &str) -> Option<Url> {
+    if let Some(mut url) = match Url::parse(href) {
+        Ok(url) if is_http_s(&url) => Some(url),
+        Ok(_) => None,
+        Err(ParseError::RelativeUrlWithoutBase) => match base.join(href) {
+            Ok(url) => Some(url),
+            Err(_) => None,
+        },
+        Err(_) => None,
+    } {
+        if url.fragment().is_some() {
+            url.set_fragment(None);
+        }
+        if url == *base {
+            return None;
+        }
+        return Some(url);
+    }
+    None
 }

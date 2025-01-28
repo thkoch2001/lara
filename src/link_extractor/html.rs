@@ -1,9 +1,9 @@
 use crate::crawler::{Inlink, Outlink};
-use crate::url_util::is_http_s;
+use crate::url_util::parse_outlink;
 use anyhow::Result;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
-use url::{ParseError, Url};
+use url::Url;
 
 pub(super) struct HtmlExtractor;
 
@@ -21,32 +21,7 @@ impl super::Extractor for HtmlExtractor {
                 warn!("document.find should only return nodes with href attribute!");
                 continue;
             };
-
-            if let Some(mut url) = match Url::parse(href) {
-                Ok(url) if is_http_s(&url) => Some(url),
-                Ok(_) => None,
-                Err(ParseError::RelativeUrlWithoutBase) => match base.join(href) {
-                    Ok(url) => Some(url),
-                    Err(err) => {
-                        debug!("{:?}: {href}", err);
-                        None
-                    }
-                },
-                Err(err) => {
-                    debug!("{:?}: {href}", err);
-                    None
-                }
-            } {
-                if url.fragment().is_some() {
-                    url.set_fragment(None);
-                }
-                if url.to_string() == base.to_string() {
-                    continue;
-                }
-                // TODO remove safeguard!!!
-                if url.host_str() != Some("de.populus.wiki") {
-                    continue;
-                }
+            if let Some(url) = parse_outlink(base, &href) {
                 outlinks.push(Outlink {
                     url,
                     i: Inlink {
