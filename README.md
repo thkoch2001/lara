@@ -56,6 +56,29 @@ The project should also serve as an archive:
 > “Who controls the past controls the future: who controls the present
 > controls the past” --- 1984, George Orwell
 
+# Roadmap
+
+- [ ] Crawler
+    - [x] Write warc archive
+    - [x] respect robots.txt
+    - [x] crawl sitemap.xml
+    - [ ] crawl web feeds (RSS/ATOM)
+    - [ ] [partial] politeness (don't overload server)
+    - [ ] prioritize crawl urls
+    - [ ] use correct link extractor
+    - [ ] multiple crawlers in parallel
+    - [ ] URL normalization
+    - [ ] revisiting strategy
+- [ ] Build Index from warc files
+- [ ] Frontend for archive
+- [ ] Frontend for index
+
+The roadmap will grow with a better understanding of the challanges.
+
+# License
+
+AGPL
+
 # LaraBot
 
 LaraBot is the crawler of this project. It tries to be polite. Please be

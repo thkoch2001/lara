@@ -87,32 +87,61 @@ development language is English.
 Notary other projects:
 
 - [[https://www.mojeek.com][Mojeek]]: not open source but big index
-- [[https://sese.yyj.moe][SeSe Engine]]: large, open source, but Chinese source code
-- [[https://clew.se][clew]]: has not yet released its code?
+- [[https://sese.yyj.moe][SeSe Engine]]: large, open source, but Chinese source code, thus unaccessible for me
+- [[https://teclis.com][teclis]]: Hobby Project of [[https://kagi.com][Kagi Search]] founder [[https://vladimir.prelovac.com][Vladimir Prelovac]]
 
-| Project        | year  | lang   |
-|----------------+-------+--------|
-| indi.-search ✝ |       |        |
-| marginalia     |       |        |
-| mwmbl          |       |        |
-| PeARS          | <2016 | Python |
-| phinde         |       | PHP    |
-| searchmysite   |       |        |
-| stract         | ~2023 | rust   |
-| unobtanium     |       |        |
-| Wiby           |       | PHP    |
-| YaCy           | ~2003 | Java   |
+| Project        | Initiator, username               | year   | lang   | indexer   |
+|----------------+-----------------------------------+--------+--------+-----------|
+| clew           | Benjamin Hollon (benjaminbhollon) | 2024   | Python | ? own     |
+| indi.-search ✝ | James Gallagher (capjamesg)       | 2021   | Python | elastic   |
+| lieu           | Alexander Cobleigh (cblgh)        | 2021   | go     | own (sql) |
+| marginalia     | Viktor Lofgren (vlofgren)         | 2021?  | java   | own       |
+| mwmbl          | Daoud Clarke (daoudclarke)        | 2021?  | Python | own       |
+| PeARS          | Aurelie Herbelot (minimalparts)   | <2016  | Python | own       |
+| phinde         | Christian Weiske (cweiske)        | ~2016  | PHP    | elastic   |
+| searchmysite   | Michael Lewis (m-i-l)             | 2020   | Python | solr      |
+| spyglass       | Andrew Huynh (a5huynh)            | 2021   | rust   | tantivy   |
+| stract         | Mikkel Denker (mikkeldenker)      | ~2023  | rust   | tantivy   |
+| summa          | Pasha Podolsky (ppodolsky)        | ~2022< | rust   | tantivy   |
+| unobtanium     | (slatian)                         | 2023   | rust   | own (sql) |
+| Wiby           | (wibyweb)                         | ~2022  | go/PHP | own (sql) |
+| YaCy           | Michael Christen (Orbiter)        | ~2003  | Java   | solr+own  |
+
+** clew
+
+- Homepage: https://clew.se
+- Repo: https://codeberg.org/Clew
+
+Only the frontend code is available for the moment. The author wants to finish
+a refactoring before publishing the crawler.
 
 ** indieweb-search
 
 [[https://github.com/capjamesg/indieweb-search][indieweb-search]] @capjamesg (archived)
 
+Although the project is archived, it is interesting for the approach of
+crawling a more or less trusted subset of the web and thus probably avoiding
+issues with intentional spam.
+
+** lieu
+
+https://github.com/cblgh/lieu
+
+The author wrote a Thesis on transitive trust: [[https://github.com/cblgh/trustnet][TrustNet]] - a flexible and
+distributed system for deriving, and interacting with, computational trust.
+
 ** marginalia
+
 - [[https://www.marginalia.nu][marginalia]] @MarginaliaSearch
+
+The project might have the biggest index from the list and the project's blog
+is full of interesting insights.
 
 ** mwmbl
 
 [[https://mwmbl.org][mwmbl]] @mwmbl @daoudclarke
+
+Allows users to curate search results.
 
 ** PeARS
 
@@ -122,13 +151,25 @@ Contact: https://aurelieherbelot.net
 
 - Conference Paper, April 2016: PeARS: a Peer-to-peer Agent for Reciprocated Search ([[https://doi.org/10.1145/2872518.2889369][doi]]) ([[https://aurelieherbelot.net/resources/papers/www2016_pears.pdf][pdf]])
 
+PeARS tries to connect user queries to decentralized indices with minimal
+distance in vector space.
+
 ** phinde
 
-- [[https://github.com/cweiske/phinde][phinde]] @cweiske (only own domain + linked)
+- [[https://github.com/cweiske/phinde][phinde]] @cweiske (indexes only own domain + linked pages)
 
 ** searchmysite
 
 - [[https://searchmysite.net][searchmysite]] @searchmysite @m-i-l
+- public, open source but also paid site index service
+- uses scrapy
+
+** spyglass
+
+- [[https://github.com/spyglass-search/spyglass][spyglass]]
+- search in local files and your own internet index
+- tries to crawl archive.org first and falls back to actual url
+- references Brave's goggles paper
 
 ** stract
 
@@ -136,6 +177,16 @@ Contact: https://aurelieherbelot.net
 - 8.2.2024, 404 media: [[https://www.404media.co/this-guy-is-building-an-open-source-search-engine-in-real-time][This Guy Has Built an Open Source Search Engine as an
   Alternative to Google in His Spare Time]] (behind free subscription wall)
 - 4.2.2024, Hackernews: [[https://news.ycombinator.com/item?id=39254172][Stract: Open-souce, non-profit search engine]]
+
+** summa
+
+- Homepage: https://izihawa.github.io
+- Repo: https://github.com/izihawa/summa
+
+Summa is a p2p search engine using IPFS for index distribution and WASM to
+execute the search application in the browser.
+
+Summa does not (yet?) include a crawler.
 
 ** unobtanium
 
@@ -150,11 +201,35 @@ Contact: https://aurelieherbelot.net
 - [[https://yacy.net/][YaCy]] @Orbiter
 
 * Links, Ideas, Stuff
-** crawlers
+** crawling
+*** theory
+- https://web.archive.org/web/20240921235038/https://infolab.stanford.edu/~olston/publications/crawling_survey.pdf
+*** crawlers
 - https://github.com/Nandakumartc/scraper-crawler List of scraper,crawler,spider in different languages
+*** link extraction
+
+*** politeness
+**** rate limit
+**** robots exclusion (robots.txt)
+
+[[https://www.rfc-editor.org/rfc/rfc9309.html][RFC 9309]], [[https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt][Google]], [[https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en][Yandex]] docs, [[https://www.robotstxt.org][robotstxt.org]]
+
+Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
+robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][RFC 9309]] and seems to be very "unrusty"
+(much mutable global state). After all it's a simple transliteration from C++.
+
+- [[https://crates.io/crates/texting_robots][texting_robots]]
+  - forked by Spire-rs' [[https://github.com/spire-rs/kit/tree/main/exclusion][kit/exclusion]]
+- [[https://crates.io/crates/robotparser][robotparser-rs]]
+  - forked by [[https://github.com/spider-rs/spider/blob/4cded306fb34e32f6806998cbf28e8558ceaeb13/spider/src/packages/robotparser/parser.rs][spider]]
+- [[https://crates.io/crates/robots_txt][robots_txt]] - unstabke, WIP, +4y
+
 ** indexing
-*** ranking
-- BM25
+- [[https://izihawa.github.io/summa/blog/how-search-engines-work][How Search Engines Work: Base Search and Inverted Index]] by [[https://github.com/ppodolsky][@PashaPodolsky]]
+** link analysis / ranking
+- https://en.wikipedia.org/wiki/Category:Link_analysis
+
+*** BM25
   - https://en.wikipedia.org/wiki/Okapi_BM25
   - [[https://www.alexmolas.com/2024/02/05/a-search-engine-in-80-lines.html][A search engine in 80 lines of Python]]
   - https://blog.clew.se/posts/im-losing-faith-in-bm25
@@ -164,6 +239,7 @@ Contact: https://aurelieherbelot.net
 - Check the search results returned by peers by asynchronous download of the
   url and confirming the presence of the search terms in the result. Adapt
   trust accordingly. (via YaCy Paper)
+- see also: https://en.wikipedia.org/wiki/Category:Reputation_management
 ** duplicate detection
 - https://blog.nelhage.com/post/fuzzy-dedup
 ** database schema
@@ -236,20 +312,6 @@ Input:
 
 - [[https://web.archive.org/web/20210129124528/https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms775147(v=vs.85)][MIME Type Detection in Windows Internet Explorer]]
 
-** robots.txt
-
-[[https://www.rfc-editor.org/rfc/rfc9309.html][RFC 9309]], [[https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt][Google]], [[https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en][Yandex]] docs, [[https://www.robotstxt.org][robotstxt.org]]
-
-Google based [[https://crates.io/crates/robotstxt][robotstxt]] does not(?) provide an object to hold a parsed
-robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][RFC 9309]] and seems to be very "unrusty"
-(much mutable global state). After all it's a simple transliteration from C++.
-
-- [[https://crates.io/crates/texting_robots][texting_robots]]
-  - forked by Spire-rs' [[https://github.com/spire-rs/kit/tree/main/exclusion][kit/exclusion]]
-- [[https://crates.io/crates/robotparser][robotparser-rs]]
-  - forked by [[https://github.com/spider-rs/spider/blob/4cded306fb34e32f6806998cbf28e8558ceaeb13/spider/src/packages/robotparser/parser.rs][spider]]
-- [[https://crates.io/crates/robots_txt][robots_txt]] - unstabke, WIP, +4y
-
 ** sitemaps
 
 - https://developers.google.com/search/docs/crawling-indexing/sitemaps
@@ -309,6 +371,8 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://github.com/iipc - International Internet Preservation Consortium
   - https://github.com/iipc/openwayback/wiki/OpenWayback-Users
 
+*** search engine courses
+- http://engineering.nyu.edu/~suel/cs6913/ CS 6913: Web Search Engines (Fall 2024)
 *** p2p
 - https://secushare.org
 - https://dat-ecosystem.org
@@ -356,6 +420,12 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
   - https://blog.pjam.me/posts/select-syscall-in-rust/
   - crates nix or rustix help
 
+**** tune, configure
+- pgtune - config calculator
+- hypopg - eval query plans with new indices
+- dexter - auto explore hypopg plans
+- percona pmm - monitor and mgmt
+
 *** crates
 - https://github.com/rinja-rs/askama Type-safe, compiled Jinja-like templates
 - https://crates.io/crates/fetcher Automatic news fetching and parsing
@@ -378,9 +448,13 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://crates.io/crates/memberlist-core - Gossip protocol for cluster membership
 - displaydoc derive macro for the standard library’s core::fmt::Display, especially for errors
 - scopeguard run a given closure when it goes out of scope (like defer in D)
+- https://crates.io/crates/whatlang natural language detection
+- https://github.com/meilisearch/meilisearch search engine like lucene?
 
 *** HTML content / article extraction
 
+- https://github.com/adbar/trafilatura also metadata, semantic data
+  extraction, links to alternatives
 - telegram's [[https://instantview.telegram.org/][instantview]]
 - https://github.com/grangier/python-goose
 - https://pkg.go.dev/github.com/thatguystone/swan

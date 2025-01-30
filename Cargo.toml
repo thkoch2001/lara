@@ -2,6 +2,12 @@
 name = "lara"
 version = "0.0.1"
 edition = "2021"
+authors = ["Thomas Koch <thomas@koch.ro>"]
+description = "decentraliced web search engine"
+homepage = "https://github.com/thkoch2001/lara"
+license = "AGPL-3.0-or-later"
+keywords = ["search", "crawler"]
+categories = ["web-programming"]
 
 [dependencies]
 anyhow = "*"
