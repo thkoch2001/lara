@@ -1,5 +1,3 @@
-TODO: https://doc.rust-lang.org/rustdoc/
-
 * Vision
 
 A network of small crawl, archive and index nodes. One node can consist of
@@ -75,6 +73,53 @@ This is still experimental but looks stable:
 - easy to respect politeness
 - good compression of warc files
 
+** Crawl in badges of a given size
+
+While search is important to find information, an index does not help if the
+website has gone offline or changed considerably. Thus this engine should also
+maintain an archive of crawled pages.
+
+In order to save storage, the similar pages should be compressed together.
+
+Pages from the same domain have probably a high similarity:
+
+- Large parts of the html are probably identical
+- The language is probably the same
+
+Archive files should be large enough to have a good compression ratio but
+small enough to allow fast access to a given page in the archive.
+
+I guess 50 MB is a good compromise for the size.
+
+** Favor urls from sitemaps and feeds
+
+Sitemaps and feeds provide a curated list of urls that site owners consider
+worth crawling and they provide metadata that would otherwise be hard to
+extract reliably from the page.
+
+I have not yet seen a scientific text on crawling that stressed the importance
+of sitemaps and feeds.
+
+** Use the same crawler loop for sitemaps, feeds and html
+
+Sitemaps, feeds and HTML pages can be abstracted as nodes with links to other
+nodes.
+
+Some HTML pages change frequently and have many links to other pages
+(e.g. frontpages, category pages), some HTML pages remain static and have
+fewer links (e.g. articles).
+
+- Sitemaps can also link to other sitemaps.
+- Sitemaps can either be linked from robots.txt or from their default
+  location.
+- Feeds can be discovered from link elements in page headers.
+
+Some sites might have many different feeds and not all of them are important:
+
+- feeds for every blog category or tag
+- feeds for every wiki article
+- comment feeds for each article
+
 * Other Search engine projects
 
 There are even more projects, e.g.:
@@ -86,26 +131,28 @@ development language is English.
 
 Notary other projects:
 
+- [[https://hearch.co][hearch.co]], [[https://github.com/searxng/searxng][searxng]]: meta-search engines
 - [[https://www.mojeek.com][Mojeek]]: not open source but big index
+- [[https://presearch.io/][Presearch]]: Looks like crypto-scam?
 - [[https://sese.yyj.moe][SeSe Engine]]: large, open source, but Chinese source code, thus unaccessible for me
 - [[https://teclis.com][teclis]]: Hobby Project of [[https://kagi.com][Kagi Search]] founder [[https://vladimir.prelovac.com][Vladimir Prelovac]]
 
-| Project        | Initiator, username               | year   | lang   | indexer   |
-|----------------+-----------------------------------+--------+--------+-----------|
-| clew           | Benjamin Hollon (benjaminbhollon) | 2024   | Python | ? own     |
-| indi.-search ✝ | James Gallagher (capjamesg)       | 2021   | Python | elastic   |
-| lieu           | Alexander Cobleigh (cblgh)        | 2021   | go     | own (sql) |
-| marginalia     | Viktor Lofgren (vlofgren)         | 2021?  | java   | own       |
-| mwmbl          | Daoud Clarke (daoudclarke)        | 2021?  | Python | own       |
-| PeARS          | Aurelie Herbelot (minimalparts)   | <2016  | Python | own       |
-| phinde         | Christian Weiske (cweiske)        | ~2016  | PHP    | elastic   |
-| searchmysite   | Michael Lewis (m-i-l)             | 2020   | Python | solr      |
-| spyglass       | Andrew Huynh (a5huynh)            | 2021   | rust   | tantivy   |
-| stract         | Mikkel Denker (mikkeldenker)      | ~2023  | rust   | tantivy   |
-| summa          | Pasha Podolsky (ppodolsky)        | ~2022< | rust   | tantivy   |
-| unobtanium     | (slatian)                         | 2023   | rust   | own (sql) |
-| Wiby           | (wibyweb)                         | ~2022  | go/PHP | own (sql) |
-| YaCy           | Michael Christen (Orbiter)        | ~2003  | Java   | solr+own  |
+| Project        | Initiator, username               | year  | lang   | indexer   |
+|----------------+-----------------------------------+-------+--------+-----------|
+| clew           | Benjamin Hollon (benjaminbhollon) | 2024  | Python | ? own     |
+| indi.-search ✝ | James Gallagher (capjamesg)       | 2021  | Python | elastic   |
+| lieu           | Alexander Cobleigh (cblgh)        | 2021  | go     | own (sql) |
+| marginalia     | Viktor Lofgren (vlofgren)         | 2021? | java   | own       |
+| mwmbl          | Daoud Clarke (daoudclarke)        | 2021? | Python | own       |
+| PeARS          | Aurelie Herbelot (minimalparts)   | <2016 | Python | own       |
+| phinde         | Christian Weiske (cweiske)        | ~2016 | PHP    | elastic   |
+| searchmysite   | Michael Lewis (m-i-l)             | 2020  | Python | solr      |
+| spyglass       | Andrew Huynh (a5huynh)            | 2021  | rust   | tantivy   |
+| stract         | Mikkel Denker (mikkeldenker)      | ~2023 | rust   | tantivy   |
+| summa          | Pasha Podolsky (ppodolsky)        | ~2022 | rust   | tantivy   |
+| unobtanium     | (slatian)                         | 2023  | rust   | own (sql) |
+| Wiby           | (wibyweb)                         | ~2022 | go/PHP | own (sql) |
+| YaCy           | Michael Christen (Orbiter)        | ~2003 | Java   | solr+own  |
 
 ** clew
 
@@ -200,15 +247,15 @@ Summa does not (yet?) include a crawler.
 
 - [[https://yacy.net/][YaCy]] @Orbiter
 
-* Links, Ideas, Stuff
-** crawling
+* Search Engine Components
+** crawler
 *** theory
 - https://web.archive.org/web/20240921235038/https://infolab.stanford.edu/~olston/publications/crawling_survey.pdf
-*** crawlers
+*** crawler implementations
 - https://github.com/Nandakumartc/scraper-crawler List of scraper,crawler,spider in different languages
 *** link extraction
 
-*** politeness
+*** politeness / respectfulness
 **** rate limit
 **** robots exclusion (robots.txt)
 
@@ -223,16 +270,44 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - [[https://crates.io/crates/robotparser][robotparser-rs]]
   - forked by [[https://github.com/spider-rs/spider/blob/4cded306fb34e32f6806998cbf28e8558ceaeb13/spider/src/packages/robotparser/parser.rs][spider]]
 - [[https://crates.io/crates/robots_txt][robots_txt]] - unstabke, WIP, +4y
+- stract search engine has its own robotstxt parser
 
-** indexing
+*** sitemaps
+
+- https://developers.google.com/search/docs/crawling-indexing/sitemaps
+- https://sitemaps.org
+- https://en.m.wikipedia.org/wiki/Sitemaps
+
+**** Rust crates
+
+- https://crates.io/crates/sitemap xml-rs, old but 8 dependents
+- https://crates.io/crates/sitemap-iter roxmltree (2022-02)
+- https://crates.io/crates/sitemaps quick-xml (2024-06), experimental learning project
+- https://crates.io/crates/wls - check for ideas
+- https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
+
+** archive
+- [[https://specs.webrecorder.net/wacz/1.1.1/][Web Archive Collection Zipped]] - Format to store pages together with their assets for easier replay
+** index
 - [[https://izihawa.github.io/summa/blog/how-search-engines-work][How Search Engines Work: Base Search and Inverted Index]] by [[https://github.com/ppodolsky][@PashaPodolsky]]
-** link analysis / ranking
-- https://en.wikipedia.org/wiki/Category:Link_analysis
-
-*** BM25
+*** entity recognition
+*** ranking
+**** BM25
   - https://en.wikipedia.org/wiki/Okapi_BM25
   - [[https://www.alexmolas.com/2024/02/05/a-search-engine-in-80-lines.html][A search engine in 80 lines of Python]]
   - https://blog.clew.se/posts/im-losing-faith-in-bm25
+
+** link analysis
+Link analysis is used by the crawler to decide what links to follow and by the
+index to prioritize pages or sites.
+
+- https://en.wikipedia.org/wiki/Category:Link_analysis
+
+** query processor
+- Tokenizer
+- Normalizer / Stemmer
+- Stop Words
+- Synonyms
 
 ** p2p search
 *** peer trust
@@ -242,6 +317,8 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - see also: https://en.wikipedia.org/wiki/Category:Reputation_management
 ** duplicate detection
 - https://blog.nelhage.com/post/fuzzy-dedup
+
+* Other stuff
 ** database schema
 
 - advisory locks with diesel:
@@ -312,19 +389,6 @@ Input:
 
 - [[https://web.archive.org/web/20210129124528/https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms775147(v=vs.85)][MIME Type Detection in Windows Internet Explorer]]
 
-** sitemaps
-
-- https://developers.google.com/search/docs/crawling-indexing/sitemaps
-- https://sitemaps.org
-- https://en.m.wikipedia.org/wiki/Sitemaps
-
-*** Crates
-
-- https://crates.io/crates/sitemap xml-rs, old but 8 dependents
-- https://crates.io/crates/sitemap-iter roxmltree (2022-02)
-- https://crates.io/crates/sitemaps quick-xml (2024-06), experimental learning project
-- https://crates.io/crates/wls - check for ideas
-- https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
 
 ** TODO
 - search topics
@@ -339,7 +403,7 @@ Input:
 *** Canonical Link Element
 - https://en.wikipedia.org/wiki/Canonical_link_element
 *** URL normalization
-- https://crates.io/crates/urlnorm 
+- https://crates.io/crates/urlnorm
 - https://en.wikipedia.org/wiki/URI_normalization
   - "Schonfeld et al. (2006) present a heuristic called DustBuster for detecting DUST (different URIs with similar text)"
 **** remove tracking URL parameters
@@ -460,3 +524,222 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://pkg.go.dev/github.com/thatguystone/swan
 - https://crates.io/crates/extrablatt
 - https://crates.io/crates/mozilla-readability
+
+* Abbreviations
+
+- CTR: Click-Through Rate
+- SERP: Search Engine Results Page
+
+* Glossary
+
+- Bounce Rate: percentage of users leaving the page without further
+  interaction
+- Dwell Time: amount of time a user spends on a page after clicking through
+  from a search result
+- Rich Snippets: Enhanced search result that includes additional information
+  like rating, review, or product price.
+- Search Box: Where users enter their queries.
+- Search Results Page (SERP) : Displays the ranked list of web pages, images,
+  videos, news articles, etc.
+- Stemming: Reducing words to their root form (e.g. "running" → "run").
+
+* Literature
+
+** {search, recommendation} on {overlay network, dht}
+
+*** Bringing Decentralized Search to Decentralized Services
+
+- https://github.com/SJTU-IPADS/DeSearch
+- https://www.usenix.org/system/files/osdi21-li.pdf
+
+*** Building a Distributed Full-Text Index for the Web
+
+http://infolab.stanford.edu/~byang/pubs/tois01.pdf
+
+Melink, Sergey, et al. "Building a distributed full-text index for the web." ACM Transactions on Information Systems (TOIS) 19.3 (2001): 217-241.
+
+*** Efficient Peer-to-Peer Keyword Searching
+
+https://piki.org/patrick/papers/search.pdf
+
+Reynolds, Patrick, and Amin Vahdat. "Efficient peer-to-peer keyword searching." Proceedings of the ACM/IFIP/USENIX 2003 International Conference on Middleware. Springer-Verlag New York, Inc., 2003.
+
+*** Towards a Fully Distributed P2P Web Search Engine
+
+http://security.riit.tsinghua.edu.cn/share/Towards.pdf
+
+Zhou, Jin, Kai Li, and Li Tang. "Towards a fully distributed p2p web search engine." null. IEEE, 2004.
+
+*** MINERVA: Collaborative P2P Search
+
+http://resources.mpi-inf.mpg.de/d5/minerva/publications/VLDB_Demo.pdf
+
+Bender, Matthias, et al. "Minerva: Collaborative p2p search." Proceedings of the 31st international conference on Very large data bases. VLDB Endowment, 2005.
+
+*** Towards Decentralized Recommender System
+
+https://pdfs.semanticscholar.org/655e/afa26547db3f1e4ab18b080db057fd58a967.pdf
+
+Ziegler, Cai-Nicolas. Towards decentralized recommender systems. Diss. University of Freiburg, 2005.
+
+*** Survey of research towards robust peer-to-peer networks: Search methods
+
+http://www.cs.umd.edu/projects/p2prg/p2p-overview.pdf
+
+Risson, John, and Tim Moors. "Survey of research towards robust peer-to-peer networks: Search methods." Computer networks 50.17 (2006): 3485-3521.
+
+*** Proof: A novel DHT-based peer-to-peer search engine
+
+https://www.researchgate.net/publication/220238342_Proof_A_novel_DHT-based_peer-to-peer_search_engine
+
+Yang, Kai-Hsiang, and Jan-Ming Ho. "Proof: A dht-based peer-to-peer search engine." Web Intelligence, 2006. WI 2006. IEEE/WIC/ACM International Conference on. IEEE, 2006.
+
+*** DHTs over Peer Clusters for Distributed Information Retrieval
+
+http://www.softnet.tuc.gr/~papapetrou/publications/SiberskiWPeerClusters.pdf
+
+Papapetrou, Odysseas, et al. "DHTs over peer clusters for distributed information retrieval." null. IEEE, 2007.
+
+*** pFusion: A P2P Architecture for Internet-Scale Content-Based Search and Retrieval
+
+http://www2.cs.ucy.ac.cy/~dzeina/papers/tpds06-zeinalipour.pdf
+
+Zeinalipour-Yazti, Demetrios, Vana Kalogeraki, and Dimitrios Gunopulos. "pFusion: a P2P architecture for Internet-scale content-based search and retrieval." IEEE Transactions on Parallel and Distributed Systems 18.6 (2007): 804-817.
+
+*** A Content–Addressable Network for Similarity Search in Metric Spaces
+
+http://www.nmis.isti.cnr.it/gennaro/publications/dbisp2p05.pdf
+
+Falchi, Fabrizio, Claudio Gennaro, and Pavel Zezula. "A content–addressable network for similarity search in metric spaces." Databases, Information Systems, and Peer-to-Peer Computing. Springer, Berlin, Heidelberg, 2007. 98-110.
+
+*** EverLast: a distributed architecture for preserving the web
+
+https://people.mpi-inf.mpg.de/~kberberi/publications/2009-jcdl2009.pdf
+
+Anand, Avishek, et al. "EverLast: a distributed architecture for preserving the web." Proceedings of the 9th ACM/IEEE-CS joint conference on Digital libraries. ACM, 2009.
+
+*** Survey of Search and Replication Schemes in Unstructured P2P Networks
+
+https://arxiv.org/abs/1008.1629
+
+Thampi, Sabu M. "Survey of search and replication schemes in unstructured p2p networks." arXiv preprint arXiv:1008.1629 (2010).
+
+*** Peer-to-peer information retrieval: An overview
+
+https://djoerdhiemstra.com/wp-content/uploads/acmtois2012.pdf
+
+Tigelaar, Almer S., Djoerd Hiemstra, and Dolf Trieschnigg. "Peer-to-peer information retrieval: An overview." ACM Transactions on Information Systems (TOIS) 30.2 (2012): 9
+
+*** DEWS: A Decentralized Engine for Web Search
+
+https://cs.uwaterloo.ca/sites/ca.computer-science/files/uploads/files/cs-2012-17.pdf
+
+Ahmed, Reaz, et al. "DEWS: A decentralized engine for Web search." 2014 10th International Conference on Network and Service Management (CNSM). IEEE, 2014.
+
+*** An Efficient Content Search Method Based on Local Link Replacement in Unstructured Peer-to-Peer Networks
+
+https://www.researchgate.net/publication/319694935_An_Efficient_Content_Search_Method_Based_on_Local_Link_Replacement_in_Unstructured_Peer-to-Peer_Networks
+
+Ogino, Nagao, and Takeshi Kitahara. "An Efficient Content Search Method Based on Local Link Replacement in Unstructured Peer-to-Peer Networks." IEICE Transactions on Communications (2017).
+
+** p2p network structures related to IR
+
+*** Comb: a resilient and efficient two‐hop lookup service for distributed communication system
+
+https://onlinelibrary.wiley.com/doi/epdf/10.1002/sec.1031
+
+Shuang, Kai, Peng Zhang, and Sen Su. "Comb: a resilient and efficient two‐hop lookup service for distributed communication system." Security and Communication Networks 8.10 (2015): 1890-1903.
+
+*** d-SHAM: A Constant Degree-Scalable Homogeneous Addressing Mechanism for Structured P2P Networks
+
+https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8302982
+
+
+Zghaibeh, Manaf, and Najam Ul Hassan. "d-SHAM: A Constant Degree-Scalable Homogeneous Addressing Mechanism for Structured P2P Networks." IEEE Access 6 (2018): 12483-12492.
+
+*** Security considerations for peer-to-peer distributed hash tables
+
+https://pdfs.semanticscholar.org/1c2d/72d2f3f9120826d2863d5c6599ffa07abc33.pdf
+
+Sit, Emil, and Robert Morris. "Security considerations for peer-to-peer distributed hash tables." International Workshop on Peer-to-Peer Systems. Springer, Berlin, Heidelberg, 2002.
+
+*** The eigentrust algorithm for reputation management in p2p networks
+
+http://ilpubs.stanford.edu:8090/562/1/2002-56.pdf
+
+Kamvar, Sepandar D., Mario T. Schlosser, and Hector Garcia-Molina. "The eigentrust algorithm for reputation management in p2p networks." Proceedings of the 12th international conference on World Wide Web. ACM, 2003.
+
+*** Survey of Six Myths and Oversights about Distributed Hash Tables’ Security
+
+http://www.hpcs.cs.tsukuba.ac.jp/~sdahan/pub/dht-myths.pdf
+
+Dahan, Sylvain, and Mitsuhisa Sato. "Survey of six myths and oversights about distributed hash tables' security." Distributed Computing Systems Workshops, 2007. ICDCSW'07. 27th International Conference on. IEEE, 2007.
+
+*** Security Issues in Structured P2P Overlay Networks
+
+http://www.cse.tkk.fi/en/publications/B/10/papers/Vestola_final.pdf
+
+Vestola, Mikko. "Security issues in structured P2P overlay networks." Helsinki University of Technology (2010).
+
+*** A Survey of DHT Security Techniques
+
+http://disi.unitn.it/~montreso/ds/papers/DhtSecuritySurvey.pdf
+
+Urdaneta, Guido, Guillaume Pierre, and Maarten Van Steen. "A survey of DHT security techniques." ACM Computing Surveys (CSUR) 43.2 (2011): 8.
+
+*** TrustedKad – Application of Trust Mechanisms to a Kademlia-Based Peer-to-Peer Network
+
+https://pdfs.semanticscholar.org/6673/de8d4df60eaa2df3d964b6a52f938e7876a3.pdf
+
+Kohnen, Michael. TrustedKad-application of trust mechanisms to a Kademlia-based peer-to-peer network. Diss. Universitätsbibliothek Duisburg-Essen, 2014.
+
+** PageRank computation on p2p (environment
+
+*** Distributed pagerank for p2p systems
+
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1.4205&rep=rep1&type=pdf
+
+Sankaralingam, Karthikeyan, Simha Sethumadhavan, and James C. Browne. "Distributed pagerank for p2p systems." High Performance Distributed Computing, 2003. Proceedings. 12th IEEE International Symposium on. IEEE, 2003
+
+*** Pagerank Computation and Keyword Search on Distributed Systems and P2P Networks
+
+https://www.cs.utexas.edu/~pingali/CSE392/2011sp/lectures/pagerank_journal_version.pdf
+
+Sankaralingam, Karthikeyan, et al. "Pagerank computation and keyword search on distributed systems and p2p networks." Journal of Grid Computing 1.3 (2003): 291-307.
+
+*** Hybrid Global-Local Indexing for Efficient Peer-to-Peer Information Retrieval[(url)](https://www.usenix.org/legacy/events/nsdi04/tech/full_papers/tang/tang_html/
+Tang, Chunqiang, and Sandhya Dwarkadas. "Hybrid Global-Local Indexing for Efficient Peer-to-Peer Information Retrieval." NSDI. Vol. 4. 2004.
+
+*** Calculation of PageRank Over a Peer-To-Peer Network
+
+https://pdfs.semanticscholar.org/6274/90c3b5d09e3e4546490bf371f7db7c21d553.pdf
+
+Cook, Matthew. "Calculation of pagerank over a peer-to-peer network." (2004).
+
+*** Efficient and Decentralized PageRank Approximation in a Peer-to-Peer Web Search Network
+
+http://www.vldb.org/conf/2006/p415-xavier%20parreira.pdf
+
+Parreira, Josiane Xavier, et al. "Efficient and decentralized pagerank approximation in a peer-to-peer web search network." Proceedings of the 32nd international conference on Very large data bases. VLDB Endowment, 2006.
+
+*** Fast Distributed PageRank Computation
+
+https://arxiv.org/abs/1208.3071
+
+Sarma, Atish Das, et al. "Fast distributed pagerank computation." International Conference on Distributed Computing and Networking. Springer, Berlin, Heidelberg, 2013.
+
+** Local Estimation of PageRank
+
+*** Local Methods for Estimating PageRank Values
+
+http://engineering.nyu.edu/~suel/papers/esti.pdf
+
+Chen, Yen-Yu, Qingqing Gan, and Torsten Suel. "Local methods for estimating pagerank values." Proceedings of the thirteenth ACM international conference on Information and knowledge management. ACM, 2004.
+
+*** The Power of Local Information in PageRank
+
+https://arxiv.org/pdf/1604.00202.pdf
+
+Bressan, Marco, Enoch Peserico, and Luca Pretto. "The power of local information in pagerank." arXiv preprint arXiv:1604.00202 (2016).
+
+Structured Peer-to-Peer Systems - Fundamentals of Hierarchical Organization, Routing, Scaling, and Security | Dmitry Korzun | Springer https://www.springer.com/la/book/9781461454823
