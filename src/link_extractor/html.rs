@@ -12,6 +12,7 @@ use url::Url;
 pub(super) struct HtmlExtractor;
 
 // todo: also extract link, img, script, style, ...
+// todo: respect <base> tag also see https://codeberg.org/unobtanium/unobtanium/issues/3 https://w3c.github.io/webappsec-csp/#directive-base-uri
 
 impl super::Extractor for HtmlExtractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>> {

@@ -66,6 +66,9 @@ Postgres should not host the index, nor the archive.
 
 No async rust code is used. Async has no support for drop. (TODO: elaborate)
 
+- 2.7.2024: [[https://www.firezone.dev/blog/sans-io][sans-IO: The secret to effective Rust for network services]]
+- 31.7.2024: [[https://www.iroh.computer/blog/async-rust-challenges-in-iroh][Async Rust Challenges in Iroh]]
+
 ** Partition crawlers by domain
 
 This is still experimental but looks stable:
@@ -137,22 +140,30 @@ Notary other projects:
 - [[https://sese.yyj.moe][SeSe Engine]]: large, open source, but Chinese source code, thus unaccessible for me
 - [[https://teclis.com][teclis]]: Hobby Project of [[https://kagi.com][Kagi Search]] founder [[https://vladimir.prelovac.com][Vladimir Prelovac]]
 
-| Project        | Initiator, username               | year  | lang   | indexer   |
+| Project        | Initiator, username               |  year | lang   | indexer   |
 |----------------+-----------------------------------+-------+--------+-----------|
-| clew           | Benjamin Hollon (benjaminbhollon) | 2024  | Python | ? own     |
-| indi.-search ✝ | James Gallagher (capjamesg)       | 2021  | Python | elastic   |
-| lieu           | Alexander Cobleigh (cblgh)        | 2021  | go     | own (sql) |
+| admarus        | (Mubelotix)                       |  2023 | rust   | own       |
+| clew           | Benjamin Hollon (benjaminbhollon) |  2024 | Python | ? own     |
+| indi.-search ✝ | James Gallagher (capjamesg)       |  2021 | Python | elastic   |
+| lieu           | Alexander Cobleigh (cblgh)        |  2021 | go     | own (sql) |
 | marginalia     | Viktor Lofgren (vlofgren)         | 2021? | java   | own       |
 | mwmbl          | Daoud Clarke (daoudclarke)        | 2021? | Python | own       |
 | PeARS          | Aurelie Herbelot (minimalparts)   | <2016 | Python | own       |
 | phinde         | Christian Weiske (cweiske)        | ~2016 | PHP    | elastic   |
-| searchmysite   | Michael Lewis (m-i-l)             | 2020  | Python | solr      |
-| spyglass       | Andrew Huynh (a5huynh)            | 2021  | rust   | tantivy   |
+| searchmysite   | Michael Lewis (m-i-l)             |  2020 | Python | solr      |
+| spyglass       | Andrew Huynh (a5huynh)            |  2021 | rust   | tantivy   |
 | stract         | Mikkel Denker (mikkeldenker)      | ~2023 | rust   | tantivy   |
 | summa          | Pasha Podolsky (ppodolsky)        | ~2022 | rust   | tantivy   |
-| unobtanium     | (slatian)                         | 2023  | rust   | own (sql) |
+| unobtanium     | (slatian)                         |  2023 | rust   | own (sql) |
 | Wiby           | (wibyweb)                         | ~2022 | go/PHP | own (sql) |
 | YaCy           | Michael Christen (Orbiter)        | ~2003 | Java   | solr+own  |
+
+** admarus
+
+- https://github.com/Mubelotix/admarus
+- search for and on top of IPFS
+- using bloom-filters to locate inverted indexes that contain the query terms
+  (sounds like [[https://en.wikipedia.org/wiki/BitFunnel][BitFunnel]]?)
 
 ** clew
 
@@ -235,6 +246,11 @@ execute the search application in the browser.
 
 Summa does not (yet?) include a crawler.
 
+*** Library STC
+
+- https://libstc.cc
+- based on summa, WASM, Iroh
+
 ** unobtanium
 
 - [[https://codeberg.org/unobtanium][unobtanium]]
@@ -286,6 +302,11 @@ robots.txt, is from a time before [[https://datatracker.ietf.org/doc/rfc9309/][R
 - https://crates.io/crates/wls - check for ideas
 - https://crates.io/crates/sitemapo quick-xml (2023-07), dead repo
 
+*** feeds
+- RSS 2.0 defines fields skipHours and skipDays to avoid unnecessary
+  polls. However I can't imagine anybody really using it?
+*** recrawling
+- https://w3c.github.io/websub via https://github.com/Podcastindex-org/podping
 ** archive
 - [[https://specs.webrecorder.net/wacz/1.1.1/][Web Archive Collection Zipped]] - Format to store pages together with their assets for easier replay
 ** index
@@ -319,6 +340,42 @@ index to prioritize pages or sites.
 - https://blog.nelhage.com/post/fuzzy-dedup
 
 * Other stuff
+** peer to peer (p2p)
+
+The Interplanetary Filesystem (IPFS) is well known but suffers from [[https://gist.github.com/liamzebedee/224494052fb6037d07a4293ceca9d6e7][bad
+performance]] and a large [[https://pure.tugraz.at/ws/portalfiles/portal/38133443/ipfs_eclipse.pdf][attack surface]].
+
+The [[https://www.iroh.computer][iroh]] library started as an IPFS implementation in Rust and decided to
+iterate on the IPFS protocol itself after measurment showed fundamental
+performance problems. Ultimately iroh decided to become a generic p2p
+networking library. (TODO: compare to libp2p)
+
+- https://medium.com/paratii/a-brief-history-of-p2p-content-distribution-in-10-major-steps-6d6733d25122
+
+*** iroh
+
+- [[https://www.iroh.computer][iroh.computer]] ([[https://github.com/n0-computer/iroh][GitHub]])
+- developed by [[https://n0.computer][n0.computer]] ([[https://www.youtube.com/@n0computer][YT]])
+- things [[https://github.com/n0-computer/awesome-iroh][built with iroh]]
+  - [[https://willowprotocol.org][willio protocol]]
+
+*** naming
+
+- [[https://github.com/Pubky/pkarr][pkarr]] uses the bittorrent DHT to map private keys to DNS records?
+
+*** cryptography
+
+**** Threshold signatures
+
+- https://www.iroh.computer/blog/frost-threshold-signatures
+
+*** p2p search
+
+- https://0fps.net/2020/12/19/peer-to-peer-ordered-search-indexes/
+- https://wiki.p2pfoundation.net/P2P-Based_Search_Engine
+- minerva
+  - https://web.archive.org/web/20110422033851/https://mpi-inf.mpg.de/departments/d5/software/minerva/publications.html
+
 ** database schema
 
 - advisory locks with diesel:
@@ -544,6 +601,11 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - Stemming: Reducing words to their root form (e.g. "running" → "run").
 
 * Literature
+
+** p2p search
+
+*** Peer-to-Peer Information Retrieval: An Overview 2012
+*** Mining the web with webcoin 2018
 
 ** {search, recommendation} on {overlay network, dht}
 
