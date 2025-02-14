@@ -1,22 +1,39 @@
-use std::time::{Duration, SystemTime};
+use chrono::prelude::*;
+use chrono::TimeDelta;
 
-pub const HALF_DAY: u64 = 12 * 60 * 60;
-pub const ONE_DAY: u64 = 24 * 60 * 60;
-pub const TWO_DAYS: u64 = 2 * ONE_DAY;
-
-pub fn elapsed(since: SystemTime, seconds: u64) -> bool {
-    let duration = since.elapsed().unwrap_or(Duration::from_secs(1));
-    duration.as_secs() > seconds
+pub fn elapsed(since: DateTime<Utc>, delta: TimeDelta) -> bool {
+    let elapsed_dt = since + delta;
+    elapsed_dt <= Utc::now()
 }
 
 /// Waits or returns immediately if until already elapsed.
-pub fn wait(until: SystemTime) {
-    let now = SystemTime::now();
-    match until.duration_since(now) {
-        Err(e) => debug!("Waiting time already elapsed since {:?}", e.duration()),
-        Ok(d) => {
-            debug!("Waiting for {} ms.", d.as_millis());
-            std::thread::sleep(d);
+pub fn wait(until: DateTime<Utc>) {
+    let delta = until.signed_duration_since(Utc::now());
+
+    match delta.to_std() {
+        Err(_) => debug!("Waiting time already elapsed since {delta}"),
+        Ok(duration) => {
+            debug!("Waiting for {} ms.", duration.as_millis());
+            std::thread::sleep(duration);
         }
-    };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Days;
+    use chrono::TimeDelta;
+    use chrono::Utc;
+
+    #[test]
+    fn test_elapsed() {
+        let delta = TimeDelta::hours(1);
+        let mut since = Utc::now();
+
+        assert!(!elapsed(since, delta));
+
+        since = since.checked_sub_days(Days::new(1)).unwrap();
+        assert!(elapsed(since, delta));
+    }
 }

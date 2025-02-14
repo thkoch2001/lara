@@ -1,9 +1,9 @@
+-- Style:
+-- - Singular table names: https://www.teamten.com/lawrence/programming/use-singular-nouns-for-database-table-names.html
+
 -- This file was automatically created by Diesel to setup helper functions
 -- and other internal bookkeeping. This file is safe to edit, any future
 -- changes will be added to existing projects as new migrations.
-
-
-
 
 -- Sets up a trigger for the given table to automatically set a column called
 -- `updated_at` whenever the row is modified (unless `updated_at` was included
@@ -52,6 +52,7 @@ CREATE TABLE domain (
 
 -- https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
 -- https://stackoverflow.com/questions/4229805/how-much-disk-space-is-needed-to-store-a-null-value-using-postgresql-db
+-- https://stackoverflow.com/questions/2966524/calculating-and-saving-space-in-postgresql/7431468#7431468
 -- TODO add rest TEXT, column encodes port number, http vs. https, authentication
 -- TODO (long term) partition by domain? https://www.postgresql.org/docs/current/ddl-partitioning.html
 CREATE TABLE url (
@@ -66,4 +67,32 @@ CREATE TABLE url (
   UNIQUE NULLS NOT DISTINCT (domain_id, path, query)
 );
 
+CREATE TABLE fetch_result (
+  fetch_result_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  url_id INTEGER NOT NULL REFERENCES url,
+  time TIMESTAMPTZ NOT NULL,
+  http_status SMALLINT NOT NULL
+  -- job_id
+);
+
+CREATE TYPE url_context AS ENUM (
+  'SEED',
+  'IS_SITEMAP',
+  'FEED_LINK', -- https://www.w3.org/TR/2014/REC-html5-20141028/links.html#rel-alternate
+  'FEED', -- url found in a feed
+  'SITEMAP',
+  'NEXT', -- https://www.w3.org/TR/2014/REC-html5-20141028/links.html#link-type-next
+  'HTML_A',
+  'STYLE',
+  'SCRIPT',
+  'IMG',
+  'OTHER'
+);
+
+CREATE TABLE inlink (
+  fetch_result_id INTEGER REFERENCES fetch_result,
+  url_id INTEGER NOT NULL REFERENCES url,
+  context url_context DEFAULT 'SEED' NOT NULL,
+  PRIMARY KEY (fetch_result_id, url_id)
+);
 

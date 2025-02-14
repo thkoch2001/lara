@@ -1,7 +1,9 @@
+use crate::crawler::Outlink;
 use crate::env_config::DB_URL;
+use crate::fetcher::FetchResult;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use url::Url;
 
 pub mod models;
 pub mod schema;
@@ -14,41 +16,77 @@ struct Id(
     i32,
 );
 
+fn format_bind_params_row<T: Iterator<Item = usize>>(r: T) -> String {
+    r.map(|i: usize| format!("${i}"))
+        .collect::<Vec<String>>()
+        .join(",")
+}
+
 pub fn format_bind_params(rows: usize, columns: usize) -> String {
     (0..rows)
         .map(|row| {
             format!(
                 "({})",
-                ((row * columns + 1)..=((row + 1) * columns))
-                    .map(|column| format!("${column}"))
-                    .collect::<Vec<String>>()
-                    .join(",")
+                format_bind_params_row((row * columns + 1)..=((row + 1) * columns))
             )
         })
         .collect::<Vec<String>>()
         .join(",")
 }
 
+pub fn insert_fetch_result(
+    conn: &mut PgConnection,
+    url_id: i32,
+    fr: &FetchResult,
+    outlinks: &[Outlink],
+) -> Result<()> {
+    if outlinks.is_empty() {
+        insert_fr(conn, url_id, fr)
+    } else {
+        insert_fr_with_urls(conn, url_id, fr, outlinks)
+    }
+}
+
+fn insert_fr(_conn: &mut PgConnection, _url_id: i32, _fr: &FetchResult) -> Result<()> {
+    todo!()
+}
+
 /// Query idea found here:
 /// <https://dba.stackexchange.com/questions/46410/how-do-i-insert-a-row-which-contains-a-foreign-key>
-pub fn insert_urls(conn: &mut PgConnection, urls: &Vec<Url>) -> Result<usize> {
-    use diesel::sql_types::{Nullable, Text};
+fn insert_fr_with_urls(
+    conn: &mut PgConnection,
+    url_id: i32,
+    fr: &FetchResult,
+    outlinks: &[Outlink],
+) -> Result<()> {
+    use diesel::sql_types::{Integer, Nullable, Text, Timestamptz};
+
+    let outlinks_len = outlinks.len();
 
     let q_str = format!(
         include_str!("insert_urls.sql"),
-        format_bind_params(urls.len(), 3)
+        format_bind_params(outlinks_len, 4),
+        format_bind_params_row(outlinks_len * 4 + 1..outlinks_len * 4 + 4)
     );
+    debug!("{q_str}");
 
     let mut q = diesel::sql_query(q_str).into_boxed();
-    for url in urls {
+    for outlink in outlinks {
+        let url = &outlink.url;
         q = q
             .bind::<Text, _>(url.domain().unwrap().to_string())
             .bind::<Text, _>(url.path().to_string())
-            .bind::<Nullable<Text>, _>(url.query().map(String::from));
+            .bind::<Nullable<Text>, _>(url.query().map(String::from))
+            .bind::<self::schema::sql_types::UrlContext, _>(&outlink.i.context);
     }
-    let affected = q.execute(conn)?;
-    debug!("insert_urls got {} urls, inserted {affected}", urls.len());
-    Ok(affected)
+
+    q = q
+        .bind::<Integer, _>(url_id)
+        .bind::<Timestamptz, _>(fr.start)
+        .bind::<Integer, _>(fr.status.as_u16() as i32);
+
+    let _ = q.execute(conn)?;
+    Ok(())
 }
 
 pub fn select_crawl_urls(

@@ -5,5 +5,8 @@
 DROP FUNCTION IF EXISTS diesel_manage_updated_at(_tbl regclass);
 DROP FUNCTION IF EXISTS diesel_set_updated_at();
 
-drop table url;
-drop table domain;
+drop table IF EXISTS inlink;
+drop table IF EXISTS fetch_result;
+drop type IF EXISTS url_context;
+drop table IF EXISTS url;
+drop table IF EXISTS domain;

@@ -7,4 +7,4 @@ custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 with_docs = true
 
 [migrations_directory]
-dir = "/home/thk/git/dezinv/lara/migrations"
+dir = "migrations"

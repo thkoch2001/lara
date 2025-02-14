@@ -7,6 +7,7 @@ use html5ever::tokenizer::{
     Tokenizer, TokenizerOpts,
 };
 use html5ever::LocalName;
+use std::cell::RefCell;
 use url::Url;
 
 pub(super) struct HtmlExtractor;
@@ -16,32 +17,32 @@ pub(super) struct HtmlExtractor;
 
 impl super::Extractor for HtmlExtractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>> {
-        let mut buffer = BufferQueue::new();
+        let mut buffer = BufferQueue::default();
         buffer.push_back(body_str.into());
         let sink = OutlinksSink::new(base.clone());
-        let mut tokenizer = Tokenizer::new(sink, TokenizerOpts::default());
+        let tokenizer = Tokenizer::new(sink, TokenizerOpts::default());
         let _ = tokenizer.feed(&mut buffer);
         tokenizer.end();
-        Ok(tokenizer.sink.outlinks)
+        Ok(tokenizer.sink.outlinks.into_inner())
     }
 }
 
 struct OutlinksSink {
     pub base_url: Url,
-    pub outlinks: Vec<Outlink>,
+    pub outlinks: RefCell<Vec<Outlink>>,
 }
 
 impl OutlinksSink {
     pub fn new(base_url: Url) -> Self {
         Self {
             base_url,
-            outlinks: Vec::new(),
+            outlinks: RefCell::new(Vec::new()),
         }
     }
 
-    fn handle_a(&mut self, tag: &Tag, href: &str) {
+    fn handle_a(&self, tag: &Tag, href: &str) {
         if let Some(url) = parse_outlink(&self.base_url, &href.to_string()) {
-            self.outlinks.push(Outlink {
+            self.outlinks.borrow_mut().push(Outlink {
                 url,
                 i: Inlink {
                     rel: get_attr(tag, local_name!("rel")),
@@ -55,7 +56,7 @@ impl OutlinksSink {
 impl TokenSink for OutlinksSink {
     type Handle = ();
 
-    fn process_token(&mut self, token: Token, _line_number: u64) -> TokenSinkResult<Self::Handle> {
+    fn process_token(&self, token: Token, _line_number: u64) -> TokenSinkResult<Self::Handle> {
         match token {
             TagToken(tag) => {
                 match tag.kind {

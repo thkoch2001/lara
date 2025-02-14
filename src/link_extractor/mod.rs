@@ -10,6 +10,7 @@ use html::HtmlExtractor;
 use sitemap::SitemapExtractor;
 
 use anyhow::Result;
+use itertools::Itertools;
 use url::Url;
 
 mod feed;
@@ -20,9 +21,10 @@ pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult) -> Result<Vec<Outlink>
     let inlink = get_inlink(&item.i);
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
     let extractor = get_extractor(fr, &inlink);
-    extractor.get_outlinks(fr.body_str().as_ref(), &item.url)
+    let outlinks = extractor.get_outlinks(fr.body_str().as_ref(), &item.url)?;
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
+    Ok(outlinks.into_iter().unique_by(|o| o.url.clone()).collect())
 }
 
 fn get_inlink(links: &[Inlink]) -> Inlink {

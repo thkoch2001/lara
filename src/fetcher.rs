@@ -13,7 +13,7 @@ use std::io::{self, Write};
 use std::ops::Add;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 use ureq::config::AutoHeaderValue as AHV;
 use ureq::tls::{TlsConfig, TlsProvider};
 use ureq::Agent;
@@ -26,14 +26,14 @@ const MAX_BODY_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
 const MIN_FETCH_DURATION: Duration = Duration::from_millis(150); // We actually wait 3xavg fetch duration between fetches
 
 struct Politeness {
-    until: SystemTime,
+    until: DateTime<Utc>,
     duration_avg: NoSumSMA<Duration, u32, 10>,
 }
 
 impl Default for Politeness {
     fn default() -> Self {
         Politeness {
-            until: SystemTime::UNIX_EPOCH,
+            until: Utc::now(),
             duration_avg: NoSumSMA::<Duration, u32, 10>::from_zero(Duration::ZERO),
         }
     }
@@ -82,7 +82,7 @@ impl Drop for Fetcher {
 pub struct FetchResult {
     pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
     pub duration: Duration,
-    pub start: SystemTime,
+    pub start: DateTime<Utc>,
     pub status: StatusCode,
     pub http_version: Version,
 }
@@ -156,7 +156,7 @@ impl Fetcher {
             .entry(url.authority().to_string())
             .or_default();
         politeness.wait();
-        let start_systemtime = SystemTime::now();
+        let start = Utc::now();
         let start_instant = Instant::now();
         let result = self
             .agent
@@ -189,7 +189,7 @@ impl Fetcher {
         let fr = FetchResult {
             body,
             duration,
-            start: start_systemtime,
+            start: start,
             status,
             http_version,
         };
@@ -258,8 +258,11 @@ impl Fetcher {
         cnt += w.write(b"\r\nWARC-Date: ")?;
         // TODO: check correct formatting of date!
         // WARC-Date fr.start UTC timestamp formatted according to [W3CDTF]
-        let dt: DateTime<Utc> = fr.start.into();
-        cnt += w.write(dt.to_rfc3339_opts(SecondsFormat::Secs, true).as_bytes())?;
+        cnt += w.write(
+            fr.start
+                .to_rfc3339_opts(SecondsFormat::Secs, true)
+                .as_bytes(),
+        )?;
         cnt += w.write(b"\r\n\r\n")?;
 
         cnt += w.write(&headers_bytes)?;

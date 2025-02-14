@@ -4,8 +4,9 @@ use crate::fetcher::Fetcher;
 use crate::url_util::with_path_only;
 use anyhow::Result;
 use cache::{AccessResult as AR, Cache as RobotsTxtCache};
+use chrono::prelude::*;
+use chrono::TimeDelta as TD;
 use std::rc::Rc;
-use std::time::SystemTime;
 use texting_robots::Robot;
 use url::Url;
 
@@ -28,7 +29,7 @@ impl RobotsTxt {
     pub fn new(bot_name: &str) -> Self {
         Self {
             bot_name: bot_name.to_string(),
-            robotstxt_cache: RobotsTxtCache::new(SystemTime::now()),
+            robotstxt_cache: RobotsTxtCache::new(Utc::now()),
         }
     }
 
@@ -88,20 +89,20 @@ impl RobotsTxt {
     fn get_or_fetch_robotstxt(&mut self, url: &Url, fetcher: &mut Fetcher) -> Result<AR<Robot>> {
         let authority = url.authority();
 
-        let mut unreachable_first_tried: Option<SystemTime> = None;
+        let mut unreachable_first_tried: Option<DateTime<Utc>> = None;
         if let Some(r) = self.robotstxt_cache.get(authority) {
             let ar = &r.ar;
             let updated = r.updated;
             match ar {
-                AR::Unavailable | AR::Ok(_) if !clock::elapsed(updated, clock::ONE_DAY) => {
+                AR::Unavailable | AR::Ok(_) if !clock::elapsed(updated, TD::days(1)) => {
                     return Ok(ar.clone())
                 }
                 AR::Unreachable(first_tried) => {
                     // TODO: replace with exponential backoff
-                    if !clock::elapsed(updated, clock::ONE_DAY) {
+                    if !clock::elapsed(updated, TD::days(1)) {
                         return Ok(ar.clone());
                     }
-                    if clock::elapsed(updated, 30 * clock::ONE_DAY) {
+                    if clock::elapsed(updated, TD::days(30)) {
                         return Ok(AR::Unavailable);
                     }
                     unreachable_first_tried = Some(*first_tried);

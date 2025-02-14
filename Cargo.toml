@@ -13,11 +13,13 @@ categories = ["web-programming"]
 anyhow = "*"
 chrono = "*"
 ctrlc = "*"
-diesel = { version = "*", features = ["postgres", "without-deprecated"], default-features = false }
+diesel = { version = "*", features = ["chrono", "postgres", "without-deprecated"], default-features = false }
+diesel-derive-enum = { version = "*", features = ["postgres"] }
 env_logger = "*"
 flate2 = "*"
 html5ever = "*"
 http = "*"
+itertools = "*"
 log = "*"
 quick-xml = "*"
 simple_moving_average = "*"

@@ -1,9 +1,10 @@
 use crate::clock;
 
+use chrono::prelude::*;
+use chrono::TimeDelta as TD;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
 
 /// Compare RFC 9309, section "2.3.1. Access Results"
 #[derive(Debug, PartialEq)]
@@ -11,7 +12,7 @@ pub enum AccessResult<T> {
     /// HTTP 400-499 range
     Unavailable,
     /// HTTP 500-599 range
-    Unreachable(SystemTime),
+    Unreachable(DateTime<Utc>),
     Ok(Rc<T>),
 }
 
@@ -29,17 +30,17 @@ impl<T> Clone for AccessResult<T> {
 pub struct Entry<T> {
     pub ar: AccessResult<T>,
     /// Time of last update for this cache entry
-    pub updated: SystemTime,
+    pub updated: DateTime<Utc>,
 }
 
 type Handle<T> = Arc<Mutex<HashMap<String, Rc<Entry<T>>>>>;
 pub struct Cache<T> {
     handle: Handle<T>,
-    last_time_shrinked: SystemTime,
+    last_time_shrinked: DateTime<Utc>,
 }
 
 impl<T> Cache<T> {
-    pub fn new(now: SystemTime) -> Self {
+    pub fn new(now: DateTime<Utc>) -> Self {
         Self {
             handle: Arc::new(Mutex::new(HashMap::new())),
             last_time_shrinked: now,
@@ -50,22 +51,24 @@ impl<T> Cache<T> {
         self.handle.lock().unwrap().get(authority).map(Rc::clone)
     }
 
-    pub fn insert(&mut self, authority: &str, ar: AccessResult<T>, now: SystemTime) {
+    pub fn insert(&mut self, authority: &str, ar: AccessResult<T>, now: DateTime<Utc>) {
         debug!("Insert for {authority} in robots.txt cache");
         let mut map = self.handle.lock().unwrap();
         let cachesize = map.len();
 
-        if cachesize > 100
-            || (cachesize > 10 && clock::elapsed(self.last_time_shrinked, clock::TWO_DAYS))
+        if cachesize >= 100
+            || (cachesize > 10 && clock::elapsed(self.last_time_shrinked, TD::days(2)))
         {
             self.last_time_shrinked = now;
-            let mut delete_older = clock::HALF_DAY;
+            let mut delete_older = TD::hours(12);
             loop {
                 map.retain(|_, v| !clock::elapsed(v.updated, delete_older));
                 if map.len() < cachesize {
                     break;
                 }
-                delete_older /= 2;
+                delete_older = delete_older / 2;
+                #[cfg(test)]
+                assert!(delete_older < TD::hours(7))
             }
         }
         let entry = Rc::new(Entry { ar, updated: now });
@@ -80,11 +83,12 @@ impl<T> Cache<T> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeDelta;
+    use chrono::Utc;
 
     use super::{AccessResult as AR, Cache};
     use assertables::*;
     use proptest::prelude::*;
-    use std::time::SystemTime;
 
     #[test]
     fn access_result_clone() {
@@ -94,7 +98,7 @@ mod tests {
         let ar: AR<bool> = AR::Ok(std::rc::Rc::new(true));
         assert_eq!(ar, ar.clone());
 
-        let ar: AR<i64> = AR::Unreachable(SystemTime::now());
+        let ar: AR<i64> = AR::Unreachable(Utc::now());
         assert_eq!(ar, ar.clone());
     }
 
@@ -105,16 +109,17 @@ mod tests {
             .. ProptestConfig::default()
         })]
         #[test]
-        fn test_insert(inserts in proptest::collection::vec(("\\PC*", any::<u8>()), 50..300)) {
-            let mut now = SystemTime::UNIX_EPOCH;
+        fn test_insert(inserts in proptest::collection::vec(("\\PC*", 0i64..256), 50..300)) {
+            let mut now = Utc::now().checked_sub_months(chrono::Months::new(120)).unwrap();
             let mut cache: Cache<()> = Cache::new(now);
             let mut len_before = cache.len();
 
             assert_eq!(len_before, 0);
 
             for (authority, delay) in inserts {
-                let duration = std::time::Duration::from_secs(3000 * u64::from(delay));
-                now = now.checked_add(duration).unwrap();
+                let delta = TimeDelta::try_seconds(3000 * delay).unwrap();
+                now = now.checked_add_signed(delta).unwrap();
+                assert!(now <= Utc::now());
                 cache.insert(authority.as_str(), AR::Unavailable, now);
                 assert_eq!(
                     cache.get(authority.as_str()).unwrap().updated,

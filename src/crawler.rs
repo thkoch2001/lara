@@ -30,7 +30,9 @@ pub struct Crawler {
 /// These contexts are not the ones from [Mime Sniffing
 /// standard](https://mimesniff.spec.whatwg.org) but should be possible to
 /// map.
-#[derive(Default, Clone)]
+#[derive(diesel_derive_enum::DbEnum, Debug, Default, Clone)]
+#[ExistingTypePath = "crate::db::schema::sql_types::UrlContext"]
+#[DbValueStyle = "SCREAMING_SNAKE_CASE"]
 pub enum Context {
     /// A link pointing to a sitemap, either found in robots.txt or the
     /// default location /sitemap.xml.
@@ -85,6 +87,7 @@ impl Crawler {
         let grace = self.signal_handler.grace();
         while let Some(item) = self.url_frontier.get_item()? {
             let url = &item.url;
+            debug!("Crawl: '{url}'");
             match self.robotstxt.check(url, &mut self.fetcher)? {
                 CheckResult::Allowed => (),
                 CheckResult::Disallowed => {
@@ -115,9 +118,11 @@ impl Crawler {
                 }
                 outlinks.append(&mut sitemap_outlinks);
             }
-            let outlinks = self.robotstxt.filter_outlinks(outlinks, &mut self.fetcher);
+            // TODO what to do with domains not crawled right now?
+            // TODO this will probably often kick the currently crawled domain out of the robotstxt cache?
+            // outlinks = self.robotstxt.filter_outlinks(outlinks, &mut self.fetcher);
 
-            self.url_frontier.put_outlinks(&item.url, &outlinks)?;
+            self.url_frontier.put_outlinks(&fr, &outlinks)?;
 
             if grace.is_interrupted() {
                 break;
