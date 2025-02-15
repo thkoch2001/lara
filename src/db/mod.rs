@@ -2,8 +2,9 @@ use crate::crawler::Outlink;
 use crate::env_config::DB_URL;
 use crate::fetcher::FetchResult;
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use crate::clock::TimeToDrop;
+use std::time::Duration;
 
 pub mod models;
 pub mod schema;
@@ -47,8 +48,17 @@ pub fn insert_fetch_result(
     }
 }
 
-fn insert_fr(_conn: &mut PgConnection, _url_id: i32, _fr: &FetchResult) -> Result<()> {
-    todo!()
+fn insert_fr(conn: &mut PgConnection, p_url_id: i32, fr: &FetchResult) -> Result<()> {
+    use self::schema::fetch_result::dsl::*;
+
+    diesel::insert_into(fetch_result)
+        .values(&(
+            url_id.eq(p_url_id),
+            time.eq(fr.start),
+            http_status.eq(fr.status.as_u16() as i16)
+        ))
+        .execute(conn)?;
+    Ok(())
 }
 
 /// Query idea found here:
@@ -60,6 +70,7 @@ fn insert_fr_with_urls(
     outlinks: &[Outlink],
 ) -> Result<()> {
     use diesel::sql_types::{Integer, Nullable, Text, Timestamptz};
+    let _ttd = TimeToDrop::new("insert_fr_with_urls", Duration::from_millis(1000));
 
     let outlinks_len = outlinks.len();
 
@@ -68,7 +79,6 @@ fn insert_fr_with_urls(
         format_bind_params(outlinks_len, 4),
         format_bind_params_row(outlinks_len * 4 + 1..outlinks_len * 4 + 4)
     );
-    debug!("{q_str}");
 
     let mut q = diesel::sql_query(q_str).into_boxed();
     for outlink in outlinks {

@@ -1,5 +1,33 @@
 use chrono::prelude::*;
 use chrono::TimeDelta;
+use std::time::{Duration, Instant};
+
+pub struct TimeToDrop {
+    id: String,
+    start: Instant,
+    threshold: Duration
+}
+
+impl TimeToDrop {
+    pub fn new(id: &str, threshold: Duration) -> Self {
+        Self {
+            id: String::from(id),
+            start: Instant::now(),
+            threshold
+        }
+    }
+}
+
+impl Drop for TimeToDrop {
+    fn drop(&mut self) {
+        let duration = self.start.elapsed();
+        if duration > self.threshold {
+            warn!("{} took {}ms. Threshold: {}ms", self.id, duration.as_millis(), self.threshold.as_millis());
+        } else {
+            debug!("{} took {}ms.", self.id, duration.as_millis());
+        }
+    }
+}
 
 pub fn elapsed(since: DateTime<Utc>, delta: TimeDelta) -> bool {
     let elapsed_dt = since + delta;

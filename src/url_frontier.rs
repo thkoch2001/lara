@@ -42,7 +42,7 @@ use anyhow::Result;
 use diesel::pg::PgConnection;
 use url::Url;
 
-use crate::crawler::{Inlink, Outlink, UrlItem};
+use crate::crawler::{Outlink, UrlItem};
 
 pub struct UrlFrontier {
     conn: PgConnection,

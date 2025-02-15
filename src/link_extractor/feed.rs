@@ -1,7 +1,6 @@
-use crate::crawler::{Inlink, Outlink};
-use crate::url_util::is_http_s;
+use crate::crawler::{Outlink};
 use anyhow::Result;
-use url::{ParseError, Url};
+use url::{/*ParseError,*/ Url};
 
 pub(super) struct FeedExtractor;
 
