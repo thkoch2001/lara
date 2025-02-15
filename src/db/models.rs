@@ -13,6 +13,7 @@ pub struct Domain {
 #[diesel(table_name = crate::db::schema::url)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Domain, foreign_key = domain_id))]
+#[allow(clippy::struct_field_names)]
 pub struct Url {
     pub url_id: i32,
     pub domain_id: i32,

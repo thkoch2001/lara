@@ -1,21 +1,14 @@
+use crate::clock::TimeToDrop;
 use crate::crawler::Outlink;
 use crate::env_config::DB_URL;
 use crate::fetcher::FetchResult;
 use anyhow::Result;
 use diesel::prelude::*;
-use crate::clock::TimeToDrop;
 use std::time::Duration;
 
 pub mod models;
+#[allow(clippy::wildcard_imports)]
 pub mod schema;
-
-#[derive(QueryableByName, Debug)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-struct Id(
-    #[diesel(sql_type = diesel::sql_types::Integer)]
-    #[diesel(column_name = id)]
-    i32,
-);
 
 fn format_bind_params_row<T: Iterator<Item = usize>>(r: T) -> String {
     r.map(|i: usize| format!("${i}"))
@@ -23,7 +16,7 @@ fn format_bind_params_row<T: Iterator<Item = usize>>(r: T) -> String {
         .join(",")
 }
 
-pub fn format_bind_params(rows: usize, columns: usize) -> String {
+fn format_bind_params(rows: usize, columns: usize) -> String {
     (0..rows)
         .map(|row| {
             format!(
@@ -49,13 +42,13 @@ pub fn insert_fetch_result(
 }
 
 fn insert_fr(conn: &mut PgConnection, p_url_id: i32, fr: &FetchResult) -> Result<()> {
-    use self::schema::fetch_result::dsl::*;
+    use self::schema::fetch_result::dsl::{fetch_result, http_status, time, url_id};
 
     diesel::insert_into(fetch_result)
         .values(&(
             url_id.eq(p_url_id),
             time.eq(fr.start),
-            http_status.eq(fr.status.as_u16() as i16)
+            http_status.eq(i16::try_from(fr.status.as_u16()).unwrap()),
         ))
         .execute(conn)?;
     Ok(())
@@ -69,7 +62,7 @@ fn insert_fr_with_urls(
     fr: &FetchResult,
     outlinks: &[Outlink],
 ) -> Result<()> {
-    use diesel::sql_types::{Integer, Nullable, Text, Timestamptz};
+    use diesel::sql_types::{Integer, Nullable, SmallInt, Text, Timestamptz};
     let _ttd = TimeToDrop::new("insert_fr_with_urls", Duration::from_millis(1000));
 
     let outlinks_len = outlinks.len();
@@ -93,7 +86,7 @@ fn insert_fr_with_urls(
     q = q
         .bind::<Integer, _>(url_id)
         .bind::<Timestamptz, _>(fr.start)
-        .bind::<Integer, _>(fr.status.as_u16() as i32);
+        .bind::<SmallInt, _>(i16::try_from(fr.status.as_u16()).unwrap());
 
     let _ = q.execute(conn)?;
     Ok(())

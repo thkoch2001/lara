@@ -2,10 +2,17 @@ use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::time::{Duration, Instant};
 
+/// Logger for function execution time
+///
+/// Logs time until function end to debug log and warns if function took longer than threshold.
+///
+/// ```
+///     let _ttd = TimeToDrop::new("FUNCTION_NAME", Duration::from_millis(1000));
+/// ```
 pub struct TimeToDrop {
     id: String,
     start: Instant,
-    threshold: Duration
+    threshold: Duration,
 }
 
 impl TimeToDrop {
@@ -13,7 +20,7 @@ impl TimeToDrop {
         Self {
             id: String::from(id),
             start: Instant::now(),
-            threshold
+            threshold,
         }
     }
 }
@@ -22,7 +29,12 @@ impl Drop for TimeToDrop {
     fn drop(&mut self) {
         let duration = self.start.elapsed();
         if duration > self.threshold {
-            warn!("{} took {}ms. Threshold: {}ms", self.id, duration.as_millis(), self.threshold.as_millis());
+            warn!(
+                "{} took {}ms. Threshold: {}ms",
+                self.id,
+                duration.as_millis(),
+                self.threshold.as_millis()
+            );
         } else {
             debug!("{} took {}ms.", self.id, duration.as_millis());
         }

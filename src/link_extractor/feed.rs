@@ -1,4 +1,4 @@
-use crate::crawler::{Outlink};
+use crate::crawler::Outlink;
 use anyhow::Result;
 use url::{/*ParseError,*/ Url};
 

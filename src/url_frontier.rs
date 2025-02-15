@@ -8,33 +8,6 @@
 //! - [Wikipedia: Crawl frontier](https://en.wikipedia.org/wiki/Crawl_frontier)
 //!
 //! [itir]: https://nlp.stanford.edu/IR-book/html/htmledition/the-url-frontier-1.html
-//!
-//! public API:
-//! - new(db_connection, max_jobs)
-//!   - spawn crawlers, set up queues
-//!   - foreach crawl_job send url
-//! - spawns crawl_job with initial url
-//! - put_urls(crawl_job, fetch_result, discovered_urls) -> Option<new_url>
-//!   - update politeness for fetched domain
-//!   - update heartbeat (locally) for crawl_job
-//!   - try send url, collect empty queues
-//!   - db stuff
-//!     - insert new urls
-//!     - select new urls
-//!   - maybe send url or send crawler shutdown
-//! - monitors CTRL-C signal and returns None on put_urls calls
-//! - send url can contain a waiting time
-//!
-//! internal:
-//! - get_url_for_crawl_job(crawl_job)
-//!   - collect domains from queues for crawl job
-//!   - Politeness.get_domains_min_waiting(Vec<domain>) -> (duration, Vec<domain>)
-//!     - returns 0 waiting time for unknown domain
-//!   - foreach domain: peek queue, search url with max priority
-//!   - pop url from queue
-//!   - send(url, waiting duration)
-//!   - if queue.len for domain is < 2
-//!     - refill queues (for all crawl_jobs?)
 
 use crate::db;
 use crate::fetcher::FetchResult;

@@ -56,6 +56,7 @@ pub enum Context {
 pub struct Inlink {
     /// TODO <https://en.wikipedia.org/wiki/Nofollow>
     /// or PREV/NEXT, however we're only interested in NEXT
+    #[allow(dead_code)]
     pub rel: Option<String>,
     pub context: Context,
     pub _redirect_count: usize,

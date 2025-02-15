@@ -17,11 +17,11 @@ pub(super) struct HtmlExtractor;
 
 impl super::Extractor for HtmlExtractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>> {
-        let mut buffer = BufferQueue::default();
+        let buffer = BufferQueue::default();
         buffer.push_back(body_str.into());
         let sink = OutlinksSink::new(base.clone());
         let tokenizer = Tokenizer::new(sink, TokenizerOpts::default());
-        let _ = tokenizer.feed(&mut buffer);
+        let _ = tokenizer.feed(&buffer);
         tokenizer.end();
         Ok(tokenizer.sink.outlinks.into_inner())
     }
@@ -41,11 +41,11 @@ impl OutlinksSink {
     }
 
     fn handle_a(&self, tag: &Tag, href: &str) {
-        if let Some(url) = parse_outlink(&self.base_url, &href.to_string()) {
+        if let Some(url) = parse_outlink(&self.base_url, href) {
             self.outlinks.borrow_mut().push(Outlink {
                 url,
                 i: Inlink {
-                    rel: get_attr(tag, local_name!("rel")),
+                    rel: get_attr(tag, &local_name!("rel")),
                     ..Inlink::default()
                 },
             });
@@ -60,9 +60,10 @@ impl TokenSink for OutlinksSink {
         match token {
             TagToken(tag) => {
                 match tag.kind {
+                    #[allow(clippy::single_match)]
                     TagKind::StartTag => match tag.name {
                         local_name!("a") => {
-                            if let Some(href) = get_attr(&tag, local_name!("href")) {
+                            if let Some(href) = get_attr(&tag, &local_name!("href")) {
                                 self.handle_a(&tag, &href);
                             }
                         }
@@ -83,9 +84,9 @@ impl TokenSink for OutlinksSink {
     }
 }
 
-fn get_attr(tag: &Tag, attr_name: LocalName) -> Option<String> {
+fn get_attr(tag: &Tag, attr_name: &LocalName) -> Option<String> {
     tag.attrs
         .iter()
-        .find(|&a| a.name.local == attr_name)
+        .find(|a| a.name.local == *attr_name)
         .map(|a| a.value.to_string())
 }

@@ -189,7 +189,7 @@ impl Fetcher {
         let fr = FetchResult {
             body,
             duration,
-            start: start,
+            start,
             status,
             http_version,
         };
