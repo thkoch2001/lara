@@ -12,6 +12,7 @@ use sitemap::SitemapExtractor;
 use anyhow::Result;
 use itertools::Itertools;
 use url::Url;
+use std::any::type_name_of_val;
 
 mod feed;
 mod html;
@@ -21,10 +22,12 @@ pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult) -> Result<Vec<Outlink>
     let inlink = get_inlink(&item.i);
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
     let extractor = get_extractor(fr, &inlink);
-    let outlinks = extractor.get_outlinks(fr.body_str().as_ref(), &item.url)?;
+    let mut outlinks = extractor.get_outlinks(fr.body_str().as_ref(), &item.url)?;
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
-    Ok(outlinks.into_iter().unique_by(|o| o.url.clone()).collect())
+    outlinks = outlinks.into_iter().unique_by(|o| o.url.clone()).collect();
+    debug!("{}: {} outlinks from {}", extractor.name(), outlinks.len(), &item.url);
+    Ok(outlinks)
 }
 
 fn get_inlink(links: &[Inlink]) -> Inlink {
@@ -47,4 +50,8 @@ fn get_extractor(_fr: &FetchResult, inlink: &Inlink) -> Box<dyn Extractor> {
 
 pub trait Extractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>>;
+
+    fn name(&self) -> &'static str {
+        type_name_of_val(&self).rsplitn(1, ':').next().expect("type_name should contain ':'.")
+    }
 }

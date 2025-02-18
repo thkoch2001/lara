@@ -104,7 +104,6 @@ impl Crawler {
 
             let fr = self.fetcher.fetch(&item.url.clone())?;
             let mut outlinks = extract_outlinks(&item, &fr)?;
-            debug!("extracted {} outlinks from {url}", outlinks.len());
             if is_domain_root(url) {
                 debug!("Adding sitemap outlinks for domain root: {url}");
                 let mut sitemap_outlinks = self.robotstxt.get_sitemaps(url, &mut self.fetcher)?;
