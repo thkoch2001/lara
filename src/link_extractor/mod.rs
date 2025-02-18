@@ -5,14 +5,14 @@
 
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
 use crate::fetcher::FetchResult;
+use anyhow::Result;
 use feed::FeedExtractor;
 use html::HtmlExtractor;
-use sitemap::SitemapExtractor;
-
-use anyhow::Result;
 use itertools::Itertools;
-use url::Url;
+use mime::{HTML, TEXT, XML};
+use sitemap::SitemapExtractor;
 use std::any::type_name_of_val;
+use url::Url;
 
 mod feed;
 mod html;
@@ -26,7 +26,12 @@ pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult) -> Result<Vec<Outlink>
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
     outlinks = outlinks.into_iter().unique_by(|o| o.url.clone()).collect();
-    debug!("{}: {} outlinks from {}", extractor.name(), outlinks.len(), &item.url);
+    debug!(
+        "{}: {} outlinks from {}",
+        extractor.name(),
+        outlinks.len(),
+        &item.url
+    );
     Ok(outlinks)
 }
 
@@ -38,8 +43,16 @@ fn get_inlink(links: &[Inlink]) -> Inlink {
     links[0].clone()
 }
 
-fn get_extractor(_fr: &FetchResult, inlink: &Inlink) -> Box<dyn Extractor> {
-    // todo context alone is not enough to get the right extractor!
+fn get_extractor(fr: &FetchResult, inlink: &Inlink) -> Box<dyn Extractor> {
+    match fr.parse_content_type() {
+        Err(e) => debug!("{e:?}"),
+        Ok(mime) => match (mime.type_(), mime.subtype()) {
+            (TEXT, HTML) => return Box::new(HtmlExtractor),
+            (_, XML) if SitemapExtractor::is(&fr.body) => return Box::new(SitemapExtractor),
+            _ => (),
+        },
+    }
+
     match inlink.context {
         Context::Other => Box::new(HtmlExtractor),
         Context::Sitemap => Box::new(SitemapExtractor),
@@ -52,6 +65,10 @@ pub trait Extractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>>;
 
     fn name(&self) -> &'static str {
-        type_name_of_val(&self).rsplitn(1, ':').next().expect("type_name should contain ':'.")
+        let full_name = type_name_of_val(&self);
+        let Some((_, name)) = full_name.rsplit_once(':') else {
+            return full_name;
+        };
+        name
     }
 }

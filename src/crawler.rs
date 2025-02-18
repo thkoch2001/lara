@@ -34,17 +34,18 @@ pub struct Crawler {
 #[ExistingTypePath = "crate::db::schema::sql_types::UrlContext"]
 #[DbValueStyle = "SCREAMING_SNAKE_CASE"]
 pub enum Context {
+    Seed,
     /// A link pointing to a sitemap, either found in robots.txt or the
     /// default location /sitemap.xml.
-    Sitemap,
+    IsSitemap,
     /// A link found in a sitemap
-    SitemapLink,
+    Sitemap,
     /// A link pointing to a syndication feed (RSS, ATOM), probably found in a
     /// html HEAD LINK element:
     /// `<head><link rel="alternate" type="application/rss+xml" href="..." />`
-    Feed,
     /// A link found in a feed
     FeedLink,
+    Feed,
     #[default]
     Other,
     Img,

@@ -2,10 +2,12 @@
 // seem to apply to a crawler.
 
 use crate::env_config::{ARCHIVE_DIR, FROM};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::prelude::*;
 use flate2::{write::GzEncoder, Compression};
-use http::{HeaderMap, StatusCode, Version};
+use http::header::CONTENT_TYPE;
+use http::{HeaderMap, HeaderValue, StatusCode, Version};
+use mime::Mime;
 use simple_moving_average::{NoSumSMA, SMA};
 use std::collections::HashMap;
 use std::fs::File;
@@ -82,6 +84,7 @@ impl Drop for Fetcher {
 pub struct FetchResult {
     pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
     pub duration: Duration,
+    pub headers: HeaderMap<HeaderValue>,
     pub start: DateTime<Utc>,
     pub status: StatusCode,
     pub http_version: Version,
@@ -92,8 +95,17 @@ impl FetchResult {
         String::from_utf8_lossy(&self.body).to_string()
     }
 
+    /// Workaround to have this line for the warc archive although we don't get it from ureq.
     fn status_line(&self) -> String {
         format!("{:?} {}\r\n", self.http_version, self.status)
+    }
+
+    pub fn parse_content_type(&self) -> Result<Mime> {
+        if let Some(content_type) = self.headers.get(CONTENT_TYPE) {
+            Ok(content_type.to_str()?.parse()?)
+        } else {
+            Err(anyhow!("No Content_Type header."))
+        }
     }
 }
 
@@ -189,17 +201,18 @@ impl Fetcher {
         let fr = FetchResult {
             body,
             duration,
+            headers,
             start,
             status,
             http_version,
         };
         politeness.update(&fr);
-        self.write_to_archive(url, &fr, &headers)?;
+        self.write_to_archive(url, &fr)?;
         Ok(fr)
     }
 
     // TODO: directly compress the archive file
-    fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, headers: &HeaderMap) -> Result<()> {
+    fn write_to_archive(&mut self, url: &Url, fr: &FetchResult) -> Result<()> {
         if self.archive_file.is_none() {
             let path = format!(
                 "{}/archive_{:03}.warc.gz",
@@ -214,7 +227,7 @@ impl Fetcher {
             // TODO start a new file with a warcinfo record
         }
         let writer = self.archive_file.as_mut().unwrap();
-        let bytes_written = Self::write_record(writer, url, fr, headers)?;
+        let bytes_written = Self::write_record(writer, url, fr)?;
         self.archive_file_bytes_written += bytes_written;
 
         // TODO somehow get the size of the compressed file?
@@ -229,17 +242,12 @@ impl Fetcher {
 
     /// WARC 1.1 spec:
     /// <https://github.com/iipc/warc-specifications/blob/master/specifications/warc-format/warc-1.1-annotated/index.md>
-    fn write_record(
-        w: &mut GzEncoder<File>,
-        url: &Url,
-        fr: &FetchResult,
-        headers: &HeaderMap,
-    ) -> io::Result<usize> {
+    fn write_record(w: &mut GzEncoder<File>, url: &Url, fr: &FetchResult) -> io::Result<usize> {
         let mut cnt = 0;
         let mut headers_bytes: Vec<u8> = Vec::new();
 
         headers_bytes.extend(fr.status_line().as_bytes());
-        for (k, v) in headers {
+        for (k, v) in &fr.headers {
             headers_bytes.extend(k.to_string().as_bytes());
             headers_bytes.extend(b": ");
             headers_bytes.extend(v.as_bytes());

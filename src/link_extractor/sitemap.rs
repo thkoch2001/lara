@@ -9,6 +9,39 @@ use anyhow::Result;
 
 pub(super) struct SitemapExtractor;
 
+impl SitemapExtractor {
+    /// Is this a sitemap?
+    pub fn is(body: &[u8]) -> bool {
+        debug!("check is sitemap");
+        let mut i = 10;
+        let mut found = false;
+        let end = std::cmp::min(body.len() - 50, 200);
+        loop {
+            if body[i..].starts_with(b"<sitemapindex") || body[i..].starts_with(b"<urlset") {
+                found = true;
+                break;
+            }
+            i += 1;
+            if i > end {
+                break;
+            }
+        }
+        if !found {
+            return false;
+        }
+        loop {
+            if body[i..].starts_with(b"://www.sitemaps.org/schemas/sitemap/") {
+                return true;
+            }
+            i += 1;
+            if i > end {
+                break;
+            }
+        }
+        false
+    }
+}
+
 impl super::Extractor for SitemapExtractor {
     fn get_outlinks(&self, body_str: &str, _: &Url) -> Result<Vec<Outlink>> {
         // TODO can we get the body as a stream?
@@ -48,8 +81,8 @@ impl super::Extractor for SitemapExtractor {
                     if let entry_name @ (b"url" | b"sitemap") = e.name().as_ref() {
                         in_entry = false;
                         let context = match entry_name {
-                            b"url" => Context::SitemapLink,
-                            b"sitemap" => Context::Sitemap,
+                            b"url" => Context::Sitemap,
+                            b"sitemap" => Context::IsSitemap,
                             _ => panic!("We already matched on this before!"),
                         };
 
@@ -66,6 +99,7 @@ impl super::Extractor for SitemapExtractor {
         Ok(outlinks)
     }
 }
+
 fn entry_to_outlink(entry: &HashMap<String, String>, context: Context) -> Option<Outlink> {
     if !entry.contains_key("loc") {
         return None;
@@ -85,4 +119,18 @@ fn entry_to_outlink(entry: &HashMap<String, String>, context: Context) -> Option
             ..Inlink::default()
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SitemapExtractor;
+
+    #[test]
+    fn test_is_sitemap() {
+        assert!(SitemapExtractor::is(br#"<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap>                                                                                                "#));
+        assert!(SitemapExtractor::is(br#"<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>                                                                                                               "#));
+        assert!(!SitemapExtractor::is(
+            b"this is not a sitemap as defined at sitemaps.org/schemas/sitemap/0.9!"
+        ));
+    }
 }
