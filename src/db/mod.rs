@@ -78,7 +78,7 @@ fn insert_fr_with_urls(
         let url = &outlink.url;
         q = q
             .bind::<Text, _>(url.domain().unwrap().to_string())
-            .bind::<Text, _>(url.path().to_string())
+            .bind::<Text, _>(url.path()[1..].to_string())
             .bind::<Nullable<Text>, _>(url.query().map(String::from))
             .bind::<self::schema::sql_types::UrlContext, _>(&outlink.i.context);
     }

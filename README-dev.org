@@ -270,6 +270,68 @@ Summa does not (yet?) include a crawler.
 *** crawler implementations
 - https://github.com/Nandakumartc/scraper-crawler List of scraper,crawler,spider in different languages
 *** link extraction
+*** URL normalization
+- https://crates.io/crates/urlnorm
+- https://crates.io/crates/normalize-url-rs
+- https://en.wikipedia.org/wiki/URI_normalization
+  - "Schonfeld et al. (2006) present a heuristic called DustBuster for detecting DUST (different URIs with similar text)"
+- Paper: [[https://static.googleusercontent.com/media/research.google.com/de//pubs/archive/35210.pdf][Do Not Crawl in the DUST: Different URLs with Similar Text]]
+- Paper: [[https://web.archive.org/web/20060918115757/http://dblab.ssu.ac.kr/publication/LeKi05a.pdf][On URL Normalization]], 2005
+- Chromium: [[https://chromium.googlesource.com/chromium/src/+/main/docs/security/url_display_guidelines/url_display_guidelines.md#display-urls-in-canonical-form][Display URLs in Canonical Form]]
+  1. Normalizing the hostname (e.g., convert to lowercase, perform IDN-related normalizations)
+  2. Stripping default ports
+  3. Path simplification
+  4. Unnecessarily-encoded octets are decoded
+- RFC 3986 section 6: [[https://datatracker.ietf.org/doc/html/rfc3986#section-6][Normalization and Comparison]]
+
+**** Cloudflare normalization
+
+When using the [[https://developers.cloudflare.com/rules/normalization/how-it-works/#cloudflare-normalization][Cloudflare URL normalization]], some extra normalization techniques will be applied to URLs of incoming requests, in the following order:
+
+1. Normalize back slashes (\) into forward slashes (/).
+2. Merge successive forward slashes (for example, // will be normalized to /).
+3. Perform RFC 3986 normalization of the resulting URL.
+
+**** trailing slash
+
+- https://developers.google.com/search/blog/2010/04/to-slash-or-not-to-slash?hl=en
+
+**** empty path
+
+RFC 3986, section 6.2.3. ("Scheme-Based Normalization") states:
+
+For example, because the "http" scheme makes use of an authority component,
+has a default port of "80", and defines an empty path to be equivalent to "/",
+the following four URIs are equivalent:
+
+- http://example.com
+- http://example.com/
+- http://example.com:/
+- http://example.com:80/
+
+RFC 2616, Section 3.2.3 ("URI Comparison") of the HTTP states:
+
+When comparing two URIs to decide if they match or not, a client SHOULD use a
+case-sensitive octet-by-octet comparison of the entire URIs, with these
+exceptions:
+
+- A port that is empty or not given is equivalent to the default port for that URI-reference;
+- Comparisons of host names MUST be case-insensitive;
+- Comparisons of scheme names MUST be case-insensitive;
+- An empty abs_path is equivalent to an abs_path of "/".
+
+**** remove tracking URL parameters
+- https://github.com/brave/brave-browser/wiki/Query-String-Filter
+- https://gitlab.com/ClearURLs/ClearUrls
+  - https://gitlab.com/ClearURLs/rules -> data.min.json -> "globalRules"
+**** crates
+- query_map - generic wrapper around HashMap<String, Vec<String>> to handle different transformations like URL query strings
+- clearurl - implementation for ClearURL
+- clearurls - rm tracking params
+- qstring - query string parser
+- shucker - Tracking-param filtering library, designed to strip URLs down to their canonical forms
+- urlnorm - url normalization
+- url-cleaner - rm tracking garbage
 
 *** politeness / respectfulness
 **** rate limit
@@ -336,6 +398,7 @@ index to prioritize pages or sites.
   url and confirming the presence of the search terms in the result. Adapt
   trust accordingly. (via YaCy Paper)
 - see also: https://en.wikipedia.org/wiki/Category:Reputation_management
+- see also: [[http://www.skyhunter.com/marcs/petnames/IntroPetNames.html][An Introduction to Petname Systems]]
 ** duplicate detection
 - https://blog.nelhage.com/post/fuzzy-dedup
 
@@ -459,22 +522,6 @@ Input:
 - https://developers.google.com/search/docs/crawling-indexing
 *** Canonical Link Element
 - https://en.wikipedia.org/wiki/Canonical_link_element
-*** URL normalization
-- https://crates.io/crates/urlnorm
-- https://en.wikipedia.org/wiki/URI_normalization
-  - "Schonfeld et al. (2006) present a heuristic called DustBuster for detecting DUST (different URIs with similar text)"
-**** remove tracking URL parameters
-- https://github.com/brave/brave-browser/wiki/Query-String-Filter
-- https://gitlab.com/ClearURLs/ClearUrls
-  - https://gitlab.com/ClearURLs/rules -> data.min.json -> "globalRules"
-**** crates
-- query_map - generic wrapper around HashMap<String, Vec<String>> to handle different transformations like URL query strings
-- clearurl - implementation for ClearURL
-- clearurls - rm tracking params
-- qstring - query string parser
-- shucker - Tracking-param filtering library, designed to strip URLs down to their canonical forms
-- urlnorm - url normalization
-- url-cleaner - rm tracking garbage
 ** compiling with openssl on Debian
 
 https://github.com/sfackler/rust-openssl/issues/2333
@@ -581,6 +628,13 @@ sudo ln -s /usr/include/x86_64-linux-gnu/openssl/configuration.h /usr/include/op
 - https://pkg.go.dev/github.com/thatguystone/swan
 - https://crates.io/crates/extrablatt
 - https://crates.io/crates/mozilla-readability
+
+**** publish date
+- https://github.com/yacy/yacy_search_server/issues/622 on publish date extraction
+  - falls back to python lib htmldate ([[https://trafilatura.readthedocs.io/en/latest/_modules/trafilatura/metadata.html#extract_metadata][source]])
+- https://htmldate.readthedocs.io/en/latest/
+  - https://github.com/adbar/htmldate
+  - https://adrien.barbaresi.eu/blog/python-extract-date-web-pages.html
 
 * Abbreviations
 

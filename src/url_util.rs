@@ -3,11 +3,13 @@ use url::Url;
 
 /// Used by crawler to give special treatment to main site of a domain
 pub fn is_domain_root(url: &Url) -> bool {
-    (url.path() == "" || url.path() == "/") && url.query().is_none() && url.has_authority()
+    url.path() == "/" && url.query().is_none() && url.has_authority()
 }
 
 /// Used to create old style well known URLs (see examples below), not to be
 /// confused with well known URIs from [RFC 8615][]
+///
+/// path must not start with slash!
 ///
 /// Examples:
 ///
@@ -26,10 +28,12 @@ pub fn is_http_s(url: &Url) -> bool {
     url.scheme() == "http" || url.scheme() == "https"
 }
 
+/// path must not start with slash!
+///
 /// see also:
 /// <https://github.com/pydantic/pydantic-core/blob/main/src/url.rs>
 pub fn build(domain: &str, path: &str, query: Option<&str>) -> Url {
-    let mut s = format!("https://{domain}{path}");
+    let mut s = format!("https://{domain}/{path}");
     if let Some(q) = query {
         s.push_str(&format!("?{q}"));
     }
