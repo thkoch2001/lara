@@ -1,5 +1,5 @@
 use crate::crawler::{Inlink, Outlink};
-use crate::url_util::parse_outlink;
+use crawl::url_util::parse_outlink;
 use anyhow::Result;
 use html5ever::local_name;
 use html5ever::tokenizer::{

@@ -1,4 +1,4 @@
-use crate::url_util;
+use crawl::url_util;
 use diesel::prelude::*;
 
 #[derive(Debug, Queryable, Selectable, Insertable, PartialEq)]

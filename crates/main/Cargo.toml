@@ -1,0 +1,39 @@
+[package]
+name = "lara"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+homepage.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+chrono = { workspace = true }
+ctrlc = "*"
+crawl = { path = "../crawl" }
+diesel = { version = "*", features = ["chrono", "postgres", "without-deprecated"], default-features = false }
+diesel-derive-enum = { version = "*", features = ["postgres"] }
+env_logger = { version = "*" }
+flate2 = "*"
+html5ever = "*"
+itertools = "*"
+log = { workspace = true }
+mime = { workspace = true }
+quick-xml = "*"
+texting_robots = "*"
+ureq = { version = "*", features = ["brotli", "charset", "gzip", "native-tls"]}
+url = { workspace = true }
+uuid = { version = "*", features = ["v4"] }
+
+[dev-dependencies]
+assertables = "*"
+proptest = "*"
+
+[profile.test.package.proptest]
+opt-level = 3
+
+[profile.test.package.rand_chacha]
+opt-level = 3

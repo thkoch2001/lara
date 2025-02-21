@@ -1,5 +1,8 @@
-[package]
-name = "lara"
+[workspace]
+members = ["crates/main", "crates/crawl"]
+resolver = "3"
+
+[workspace.package]
 version = "0.0.1"
 edition = "2021"
 authors = ["Thomas Koch <thomas@koch.ro>"]
@@ -9,32 +12,11 @@ license = "AGPL-3.0-or-later"
 keywords = ["search", "crawler"]
 categories = ["web-programming"]
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "*"
 chrono = { version = "*", default-features = false }
-ctrlc = "*"
-diesel = { version = "*", features = ["chrono", "postgres", "without-deprecated"], default-features = false }
-diesel-derive-enum = { version = "*", features = ["postgres"] }
 env_logger = "*"
-flate2 = "*"
-html5ever = "*"
 http = "*"
-itertools = "*"
 log = "*"
 mime = "*"
-quick-xml = "*"
-simple_moving_average = "*"
-texting_robots = "*"
-ureq = { version = "*", features = ["brotli", "charset", "gzip", "native-tls"]}
 url = "*"
-uuid = { version = "*", features = ["v4"] }
-
-[dev-dependencies]
-assertables = "*"
-proptest = "*"
-
-[profile.test.package.proptest]
-opt-level = 3
-
-[profile.test.package.rand_chacha]
-opt-level = 3

@@ -1,7 +1,6 @@
-use crate::clock;
-use crate::crawler::{Context, Inlink, Outlink};
+use crawl::clock;
 use crate::fetcher::Fetcher;
-use crate::url_util::with_path_only;
+use crawl::url_util::with_path_only;
 use anyhow::Result;
 use cache::{AccessResult as AR, Cache as RobotsTxtCache};
 use chrono::prelude::*;
@@ -33,24 +32,19 @@ impl RobotsTxt {
         }
     }
 
-    pub fn get_sitemaps(&mut self, url: &Url, fetcher: &mut Fetcher) -> Result<Vec<Outlink>> {
-        let mut outlinks: Vec<Outlink> = Vec::new();
+    pub fn get_sitemaps(&mut self, url: &Url, fetcher: &mut Fetcher) -> Result<Vec<Url>> {
+        let mut sitemap_urls: Vec<Url> = Vec::new();
         if let AR::Ok(robot) = self.get_or_fetch_robotstxt(url, fetcher)? {
             for sitemap_url in &robot.sitemaps {
                 if let Ok(url) = Url::parse(sitemap_url) {
-                    outlinks.push(Outlink {
-                        url,
-                        i: Inlink {
-                            context: Context::Sitemap,
-                            ..Inlink::default()
-                        },
-                    });
+                    sitemap_urls.push(url)
                 }
             }
         }
-        Ok(outlinks)
+        Ok(sitemap_urls)
     }
 
+    /* TODO: Do we want to filter outlinks and fetch robots.txt during crawl?
     pub fn filter_outlinks(
         &mut self,
         outlinks: Vec<Outlink>,
@@ -68,7 +62,7 @@ impl RobotsTxt {
                 _ => false,
             })
             .collect()
-    }
+    }*/
 
     pub fn check(&mut self, url: &Url, fetcher: &mut Fetcher) -> Result<CheckResult> {
         let ar = self.get_or_fetch_robotstxt(url, fetcher)?;
@@ -112,19 +106,19 @@ impl RobotsTxt {
         }
 
         let robots_url = with_path_only(url, "robots.txt");
-        let fetchresult = fetcher.fetch(&robots_url)?;
+        let (fr, body) = fetcher.fetch(&robots_url)?;
 
-        let ar = match fetchresult.status.as_u16() {
+        let ar = match fr.status.as_u16() {
             400..=499 => AR::Unavailable,
             200 => {
-                let robot = Robot::new(&self.bot_name, &fetchresult.body);
+                let robot = Robot::new(&self.bot_name, &body);
                 AR::Ok(Rc::new(robot.unwrap()))
             }
-            _ => AR::Unreachable(unreachable_first_tried.unwrap_or(fetchresult.start)),
+            _ => AR::Unreachable(unreachable_first_tried.unwrap_or(fr.start)),
         };
 
         self.robotstxt_cache
-            .insert(authority, ar.clone(), fetchresult.start);
+            .insert(authority, ar.clone(), fr.start);
         Ok(ar)
     }
 }

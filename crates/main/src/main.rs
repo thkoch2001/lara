@@ -14,7 +14,6 @@
 #[macro_use]
 extern crate log;
 
-mod clock;
 mod crawler;
 #[macro_use]
 mod env_vars;
@@ -24,7 +23,6 @@ mod link_extractor;
 mod robotstxt;
 mod signal_handler;
 mod url_frontier;
-mod url_util;
 
 use std::thread;
 

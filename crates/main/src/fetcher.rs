@@ -2,17 +2,14 @@
 // seem to apply to a crawler.
 
 use crate::env_config::{ARCHIVE_DIR, FROM};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use chrono::prelude::*;
+use crawl::fetch::FetchResult;
+use crawl::polite::Politeness;
 use flate2::{write::GzEncoder, Compression};
-use http::header::CONTENT_TYPE;
-use http::{HeaderMap, HeaderValue, StatusCode, Version};
-use mime::Mime;
-use simple_moving_average::{NoSumSMA, SMA};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Write};
-use std::ops::Add;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -25,39 +22,6 @@ use uuid::Uuid;
 // TODO Move to configuration
 /// Maximum size for HTTP response body
 const MAX_BODY_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
-const MIN_FETCH_DURATION: Duration = Duration::from_millis(150); // We actually wait 3xavg fetch duration between fetches
-
-struct Politeness {
-    until: DateTime<Utc>,
-    duration_avg: NoSumSMA<Duration, u32, 10>,
-}
-
-impl Default for Politeness {
-    fn default() -> Self {
-        Politeness {
-            until: Utc::now(),
-            duration_avg: NoSumSMA::<Duration, u32, 10>::from_zero(Duration::ZERO),
-        }
-    }
-}
-
-impl Politeness {
-    pub fn update(&mut self, fr: &FetchResult) {
-        match fr.status.as_u16() {
-            200 => {
-                self.duration_avg
-                    .add_sample(std::cmp::max(fr.duration, MIN_FETCH_DURATION));
-                self.until = fr.start.add(self.duration_avg.get_average() * 3);
-            }
-            429 => todo!(),
-            _ => (), // todo
-        }
-    }
-
-    pub fn wait(&self) {
-        crate::clock::wait(self.until);
-    }
-}
 
 pub struct Fetcher {
     archive_dir: PathBuf,
@@ -77,34 +41,6 @@ impl Drop for Fetcher {
             if let Err(e) = self.close_archive_file() {
                 error!("{e:?}");
             }
-        }
-    }
-}
-
-pub struct FetchResult {
-    pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
-    pub duration: Duration,
-    pub headers: HeaderMap<HeaderValue>,
-    pub start: DateTime<Utc>,
-    pub status: StatusCode,
-    pub http_version: Version,
-}
-
-impl FetchResult {
-    pub fn body_str(&self) -> String {
-        String::from_utf8_lossy(&self.body).to_string()
-    }
-
-    /// Workaround to have this line for the warc archive although we don't get it from ureq.
-    fn status_line(&self) -> String {
-        format!("{:?} {}\r\n", self.http_version, self.status)
-    }
-
-    pub fn parse_content_type(&self) -> Result<Mime> {
-        if let Some(content_type) = self.headers.get(CONTENT_TYPE) {
-            Ok(content_type.to_str()?.parse()?)
-        } else {
-            Err(anyhow!("No Content_Type header."))
         }
     }
 }
@@ -160,7 +96,7 @@ impl Fetcher {
     // TODO implement option to specify size limit
     // Yandex limits robots.txt to 500 KB https://yandex.ru/support/webmaster/controlling-robot/robots-txt.html?lang=en
     // Sitemaps are limited to 50 MB
-    pub fn fetch(&mut self, url: &Url) -> Result<FetchResult> {
+    pub fn fetch(&mut self, url: &Url) -> Result<(FetchResult, Vec<u8>)> {
         debug!("Fetching {url}");
         // todo clean old entries from politeness HashMap
         let politeness = self
@@ -199,7 +135,6 @@ impl Fetcher {
             .read_to_vec()?;
 
         let fr = FetchResult {
-            body,
             duration,
             headers,
             start,
@@ -207,11 +142,11 @@ impl Fetcher {
             http_version,
         };
         politeness.update(&fr);
-        self.write_to_archive(url, &fr)?;
-        Ok(fr)
+        self.write_to_archive(url, &fr, &body)?;
+        Ok((fr, body))
     }
 
-    fn write_to_archive(&mut self, url: &Url, fr: &FetchResult) -> Result<()> {
+    fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, body: &[u8]) -> Result<()> {
         if self.archive_file.is_none() {
             let path = format!(
                 "{}/archive_{:03}.warc.gz",
@@ -226,7 +161,7 @@ impl Fetcher {
             // TODO start a new file with a warcinfo record
         }
         let writer = self.archive_file.as_mut().unwrap();
-        let bytes_written = Self::write_record(writer, url, fr)?;
+        let bytes_written = Self::write_record(writer, url, fr, body)?;
         self.archive_file_bytes_written += bytes_written;
 
         // TODO somehow get the size of the compressed file?
@@ -241,7 +176,7 @@ impl Fetcher {
 
     /// WARC 1.1 spec:
     /// <https://github.com/iipc/warc-specifications/blob/master/specifications/warc-format/warc-1.1-annotated/index.md>
-    fn write_record(w: &mut GzEncoder<File>, url: &Url, fr: &FetchResult) -> io::Result<usize> {
+    fn write_record(w: &mut GzEncoder<File>, url: &Url, fr: &FetchResult, body: &[u8]) -> io::Result<usize> {
         let mut cnt = 0;
         let mut headers_bytes: Vec<u8> = Vec::new();
 
@@ -260,7 +195,7 @@ impl Fetcher {
         cnt += w.write(url.to_string().as_bytes())?;
         cnt += w.write(b"\r\nContent-Length: ")?;
         // TODO: check whether body.len() is correct!
-        let content_length = headers_bytes.len() + fr.body.len();
+        let content_length = headers_bytes.len() + body.len();
         cnt += w.write(content_length.to_string().as_bytes())?;
         cnt += w.write(b"\r\nWARC-Date: ")?;
         // TODO: check correct formatting of date!
@@ -273,7 +208,7 @@ impl Fetcher {
         cnt += w.write(b"\r\n\r\n")?;
 
         cnt += w.write(&headers_bytes)?;
-        cnt += w.write(fr.body.as_ref())?;
+        cnt += w.write(body.as_ref())?;
         cnt += w.write(b"\r\n\r\n")?;
         w.flush()?;
 

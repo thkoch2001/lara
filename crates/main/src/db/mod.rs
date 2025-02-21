@@ -1,7 +1,7 @@
-use crate::clock::TimeToDrop;
+use crawl::clock::TimeToDrop;
 use crate::crawler::Outlink;
 use crate::env_config::DB_URL;
-use crate::fetcher::FetchResult;
+use crawl::fetch::FetchResult;
 use anyhow::Result;
 use diesel::prelude::*;
 use std::time::Duration;

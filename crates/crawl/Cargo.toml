@@ -1,0 +1,19 @@
+[package]
+name = "crawl"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+homepage.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+chrono = { workspace = true }
+http = { workspace = true }
+log = { workspace = true }
+mime = { workspace = true }
+simple_moving_average = "*"
+url = { workspace = true }

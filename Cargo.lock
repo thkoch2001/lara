@@ -243,6 +243,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
+name = "crawl"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "http",
+ "log",
+ "mime",
+ "simple_moving_average",
+ "url",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -749,19 +762,18 @@ dependencies = [
  "anyhow",
  "assertables",
  "chrono",
+ "crawl",
  "ctrlc",
  "diesel",
  "diesel-derive-enum",
  "env_logger",
  "flate2",
  "html5ever",
- "http",
  "itertools",
  "log",
  "mime",
  "proptest",
  "quick-xml",
- "simple_moving_average",
  "texting_robots",
  "ureq",
  "url",
