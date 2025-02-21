@@ -211,7 +211,6 @@ impl Fetcher {
         Ok(fr)
     }
 
-    // TODO: directly compress the archive file
     fn write_to_archive(&mut self, url: &Url, fr: &FetchResult) -> Result<()> {
         if self.archive_file.is_none() {
             let path = format!(

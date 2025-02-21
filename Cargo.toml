@@ -11,7 +11,7 @@ categories = ["web-programming"]
 
 [dependencies]
 anyhow = "*"
-chrono = "*"
+chrono = { version = "*", default-features = false }
 ctrlc = "*"
 diesel = { version = "*", features = ["chrono", "postgres", "without-deprecated"], default-features = false }
 diesel-derive-enum = { version = "*", features = ["postgres"] }

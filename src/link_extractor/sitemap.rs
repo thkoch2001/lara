@@ -11,6 +11,7 @@ pub(super) struct SitemapExtractor;
 
 impl SitemapExtractor {
     /// Is this a sitemap?
+    /// TODO crates memchr or aho-corasick might be useful here and are already in the deps
     pub fn is(body: &[u8]) -> bool {
         debug!("check is sitemap");
         let mut i = 10;

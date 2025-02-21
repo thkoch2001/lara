@@ -65,10 +65,8 @@ pub trait Extractor {
     fn get_outlinks(&self, body_str: &str, base: &Url) -> Result<Vec<Outlink>>;
 
     fn name(&self) -> &'static str {
-        let full_name = type_name_of_val(&self);
-        let Some((_, name)) = full_name.rsplit_once(':') else {
-            return full_name;
-        };
-        name
+        let full_name = &type_name_of_val(&self);
+        debug_assert!(full_name[..32] == *"&lara::link_extractor::sitemap::");
+        &full_name[32..]
     }
 }
