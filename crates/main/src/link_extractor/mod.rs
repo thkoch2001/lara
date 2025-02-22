@@ -4,8 +4,8 @@
 // * [Mime Sniffing standard](https://mimesniff.spec.whatwg.org)
 
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
-use crawl::fetch::FetchResult;
 use anyhow::Result;
+use crawl::fetch::FetchResult;
 use feed::FeedExtractor;
 use html::HtmlExtractor;
 use itertools::Itertools;
@@ -18,11 +18,11 @@ mod feed;
 mod html;
 mod sitemap;
 
-pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult, body: Vec<u8>) -> Result<Vec<Outlink>> {
+pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult, body: &[u8]) -> Result<Vec<Outlink>> {
     let inlink = get_inlink(&item.i);
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
-    let extractor = get_extractor(fr, &body, &inlink);
-    let mut outlinks = extractor.get_outlinks(&String::from_utf8_lossy(&body), &item.url)?;
+    let extractor = get_extractor(fr, body, &inlink);
+    let mut outlinks = extractor.get_outlinks(&String::from_utf8_lossy(body), &item.url)?;
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
     outlinks = outlinks.into_iter().unique_by(|o| o.url.clone()).collect();
@@ -43,7 +43,7 @@ fn get_inlink(links: &[Inlink]) -> Inlink {
     links[0].clone()
 }
 
-fn get_extractor(fr: &FetchResult, body: &Vec<u8>, inlink: &Inlink) -> Box<dyn Extractor> {
+fn get_extractor(fr: &FetchResult, body: &[u8], inlink: &Inlink) -> Box<dyn Extractor> {
     match fr.parse_content_type() {
         Err(e) => debug!("{e:?}"),
         Ok(mime) => match (mime.type_(), mime.subtype()) {

@@ -14,8 +14,8 @@ use crate::link_extractor::extract_outlinks;
 use crate::robotstxt::{CheckResult, RobotsTxt};
 use crate::signal_handler::SignalHandler;
 use crate::url_frontier::UrlFrontier;
-use crawl::url_util::{is_domain_root, with_path_only};
 use anyhow::Result;
+use crawl::url_util::{is_domain_root, with_path_only};
 use url::Url;
 
 pub struct Crawler {
@@ -102,19 +102,21 @@ impl Crawler {
             }
 
             let (fr, body) = self.fetcher.fetch(&item.url.clone())?;
-            let mut outlinks = extract_outlinks(&item, &fr, body)?;
+            let mut outlinks = extract_outlinks(&item, &fr, &body)?;
             if is_domain_root(url) {
                 debug!("Adding sitemap outlinks for domain root: {url}");
-                let mut sitemap_outlinks: Vec<Outlink> = self.robotstxt.get_sitemaps(url, &mut self.fetcher)?.into_iter().map(
-                    |url|
-                    Outlink {
+                let mut sitemap_outlinks: Vec<Outlink> = self
+                    .robotstxt
+                    .get_sitemaps(url, &mut self.fetcher)?
+                    .into_iter()
+                    .map(|url| Outlink {
                         url,
                         i: Inlink {
                             context: Context::Sitemap,
                             ..Inlink::default()
                         },
-                    }
-                ).collect();
+                    })
+                    .collect();
                 if sitemap_outlinks.is_empty() {
                     sitemap_outlinks = vec![Outlink {
                         url: with_path_only(url, "sitemap.xml"),

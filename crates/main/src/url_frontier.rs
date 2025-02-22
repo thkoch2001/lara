@@ -10,8 +10,8 @@
 //! [itir]: https://nlp.stanford.edu/IR-book/html/htmledition/the-url-frontier-1.html
 
 use crate::db;
-use crawl::fetch::FetchResult;
 use anyhow::Result;
+use crawl::fetch::FetchResult;
 use diesel::pg::PgConnection;
 use url::Url;
 

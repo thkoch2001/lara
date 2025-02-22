@@ -1,6 +1,6 @@
-use simple_moving_average::{NoSumSMA, SMA};
-use chrono::prelude::*;
 use crate::fetch::FetchResult;
+use chrono::prelude::*;
+use simple_moving_average::{NoSumSMA, SMA};
 use std::ops::Add;
 use std::time::Duration;
 

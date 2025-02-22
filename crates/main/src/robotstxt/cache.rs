@@ -1,7 +1,7 @@
 use crawl::clock;
 
-use chrono::prelude::*;
 use chrono::TimeDelta as TD;
+use chrono::prelude::*;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};

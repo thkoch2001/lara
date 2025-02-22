@@ -6,16 +6,16 @@ use anyhow::Result;
 use chrono::prelude::*;
 use crawl::fetch::FetchResult;
 use crawl::polite::Politeness;
-use flate2::{write::GzEncoder, Compression};
+use flate2::{Compression, write::GzEncoder};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use ureq::Agent;
 use ureq::config::AutoHeaderValue as AHV;
 use ureq::tls::{TlsConfig, TlsProvider};
-use ureq::Agent;
 use url::Url;
 use uuid::Uuid;
 
@@ -176,7 +176,12 @@ impl Fetcher {
 
     /// WARC 1.1 spec:
     /// <https://github.com/iipc/warc-specifications/blob/master/specifications/warc-format/warc-1.1-annotated/index.md>
-    fn write_record(w: &mut GzEncoder<File>, url: &Url, fr: &FetchResult, body: &[u8]) -> io::Result<usize> {
+    fn write_record(
+        w: &mut GzEncoder<File>,
+        url: &Url,
+        fr: &FetchResult,
+        body: &[u8],
+    ) -> io::Result<usize> {
         let mut cnt = 0;
         let mut headers_bytes: Vec<u8> = Vec::new();
 

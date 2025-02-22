@@ -1,8 +1,8 @@
-use crawl::clock::TimeToDrop;
 use crate::crawler::Outlink;
 use crate::env_config::DB_URL;
-use crawl::fetch::FetchResult;
 use anyhow::Result;
+use crawl::clock::TimeToDrop;
+use crawl::fetch::FetchResult;
 use diesel::prelude::*;
 use std::time::Duration;
 

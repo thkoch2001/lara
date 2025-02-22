@@ -1,10 +1,10 @@
-use crawl::clock;
 use crate::fetcher::Fetcher;
-use crawl::url_util::with_path_only;
 use anyhow::Result;
 use cache::{AccessResult as AR, Cache as RobotsTxtCache};
-use chrono::prelude::*;
 use chrono::TimeDelta as TD;
+use chrono::prelude::*;
+use crawl::clock;
+use crawl::url_util::with_path_only;
 use std::rc::Rc;
 use texting_robots::Robot;
 use url::Url;
@@ -37,7 +37,7 @@ impl RobotsTxt {
         if let AR::Ok(robot) = self.get_or_fetch_robotstxt(url, fetcher)? {
             for sitemap_url in &robot.sitemaps {
                 if let Ok(url) = Url::parse(sitemap_url) {
-                    sitemap_urls.push(url)
+                    sitemap_urls.push(url);
                 }
             }
         }
@@ -89,7 +89,7 @@ impl RobotsTxt {
             let updated = r.updated;
             match ar {
                 AR::Unavailable | AR::Ok(_) if !clock::elapsed(updated, TD::days(1)) => {
-                    return Ok(ar.clone())
+                    return Ok(ar.clone());
                 }
                 AR::Unreachable(first_tried) => {
                     // TODO: replace with exponential backoff
@@ -117,8 +117,7 @@ impl RobotsTxt {
             _ => AR::Unreachable(unreachable_first_tried.unwrap_or(fr.start)),
         };
 
-        self.robotstxt_cache
-            .insert(authority, ar.clone(), fr.start);
+        self.robotstxt_cache.insert(authority, ar.clone(), fr.start);
         Ok(ar)
     }
 }

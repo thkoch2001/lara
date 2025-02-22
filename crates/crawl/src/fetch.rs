@@ -1,12 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use chrono::prelude::*;
-use http::{HeaderMap, HeaderValue, StatusCode, Version};
 use http::header::CONTENT_TYPE;
+use http::{HeaderMap, HeaderValue, StatusCode, Version};
 use mime::Mime;
 use std::time::Duration;
 
 pub struct FetchResult {
-//    pub body: Vec<u8>, // TODO what's the advantage of Bytes crate?
     pub duration: Duration,
     pub headers: HeaderMap<HeaderValue>,
     pub start: DateTime<Utc>,

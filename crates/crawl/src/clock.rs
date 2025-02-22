@@ -1,5 +1,5 @@
-use chrono::prelude::*;
 use chrono::TimeDelta;
+use chrono::prelude::*;
 use std::time::{Duration, Instant};
 
 /// Logger for function execution time

@@ -154,9 +154,4 @@ diesel::joinable!(inlink -> fetch_result (fetch_result_id));
 diesel::joinable!(inlink -> url (url_id));
 diesel::joinable!(url -> domain (domain_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    domain,
-    fetch_result,
-    inlink,
-    url,
-);
+diesel::allow_tables_to_appear_in_same_query!(domain, fetch_result, inlink, url,);

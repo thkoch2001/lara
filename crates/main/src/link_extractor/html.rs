@@ -1,12 +1,12 @@
 use crate::crawler::{Inlink, Outlink};
-use crawl::url_util::parse_outlink;
 use anyhow::Result;
+use crawl::url_util::parse_outlink;
+use html5ever::LocalName;
 use html5ever::local_name;
 use html5ever::tokenizer::{
     BufferQueue, CharacterTokens, Tag, TagKind, TagToken, Token, TokenSink, TokenSinkResult,
     Tokenizer, TokenizerOpts,
 };
-use html5ever::LocalName;
 use std::cell::RefCell;
 use url::Url;
 

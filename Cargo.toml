@@ -14,7 +14,7 @@ categories = ["web-programming"]
 
 [workspace.dependencies]
 anyhow = "*"
-chrono = { version = "*", default-features = false }
+chrono = { version = "*", default-features = false, features = [ "now" ] }
 env_logger = "*"
 http = "*"
 log = "*"
