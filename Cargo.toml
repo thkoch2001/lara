@@ -4,7 +4,7 @@ resolver = "3"
 
 [workspace.package]
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 authors = ["Thomas Koch <thomas@koch.ro>"]
 description = "decentraliced web search engine"
 homepage = "https://github.com/thkoch2001/lara"
