@@ -68,6 +68,7 @@ No async rust code is used. Async has no support for drop. (TODO: elaborate)
 
 - 2.7.2024: [[https://www.firezone.dev/blog/sans-io][sans-IO: The secret to effective Rust for network services]]
 - 31.7.2024: [[https://www.iroh.computer/blog/async-rust-challenges-in-iroh][Async Rust Challenges in Iroh]]
+- 8.9.2023: [[https://bitbashing.io/async-rust.html][Async Rust Is A Bad Language]]
 
 ** Partition crawlers by domain
 

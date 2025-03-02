@@ -1,5 +1,6 @@
-use crate::crawler::{Inlink, Outlink};
+use crate::crawler::{Context, Inlink, Outlink};
 use anyhow::Result;
+use crawl::link;
 use crawl::url_util::parse_outlink;
 use html5ever::LocalName;
 use html5ever::local_name;
@@ -7,12 +8,13 @@ use html5ever::tokenizer::{
     BufferQueue, CharacterTokens, Tag, TagKind, TagToken, Token, TokenSink, TokenSinkResult,
     Tokenizer, TokenizerOpts,
 };
+use mime::Mime;
 use std::cell::RefCell;
 use url::Url;
 
 pub(super) struct HtmlExtractor;
 
-// todo: also extract link, img, script, style, ...
+// todo: also extract img, script, style, ...
 // todo: respect <base> tag also see https://codeberg.org/unobtanium/unobtanium/issues/3 https://w3c.github.io/webappsec-csp/#directive-base-uri
 
 impl super::Extractor for HtmlExtractor {
@@ -40,15 +42,39 @@ impl OutlinksSink {
         }
     }
 
+    fn push_outlink(&self, url: Url, i: Inlink) {
+        self.outlinks.borrow_mut().push(Outlink { url, i });
+    }
+
+    // todo: context of rel="next" should be next
     fn handle_a(&self, tag: &Tag, href: &str) {
         if let Some(url) = parse_outlink(&self.base_url, href) {
-            self.outlinks.borrow_mut().push(Outlink {
+            let (rel, content_type) = get_link_attrs(tag);
+            self.push_outlink(
                 url,
-                i: Inlink {
-                    rel: get_attr(tag, &local_name!("rel")),
+                Inlink {
+                    rel,
+                    content_type,
                     ..Inlink::default()
                 },
-            });
+            );
+        }
+    }
+
+    /// For the moment only extracts links to feeds
+    fn handle_link(&self, tag: &Tag, href: &str) {
+        if let Some(url) = parse_outlink(&self.base_url, href) {
+            let (rel, content_type) = get_link_attrs(tag);
+            if link::is_feed_link(&rel, &content_type) {
+                self.push_outlink(
+                    url,
+                    Inlink {
+                        rel,
+                        content_type,
+                        context: Context::FeedLink,
+                    },
+                );
+            }
         }
     }
 }
@@ -65,6 +91,11 @@ impl TokenSink for OutlinksSink {
                         local_name!("a") => {
                             if let Some(href) = get_attr(&tag, &local_name!("href")) {
                                 self.handle_a(&tag, &href);
+                            }
+                        }
+                        local_name!("link") => {
+                            if let Some(href) = get_attr(&tag, &local_name!("href")) {
+                                self.handle_link(&tag, &href);
                             }
                         }
                         _ => (),
@@ -89,4 +120,20 @@ fn get_attr(tag: &Tag, attr_name: &LocalName) -> Option<String> {
         .iter()
         .find(|a| a.name.local == *attr_name)
         .map(|a| a.value.to_string())
+}
+
+fn get_link_attrs(tag: &Tag) -> (Vec<String>, Option<Mime>) {
+    let rel = link::split_words(get_attr(tag, &local_name!("rel")).as_deref());
+    let content_type: Option<Mime> = if let Some(attr) = get_attr(tag, &local_name!("type")) {
+        match attr.parse() {
+            Ok(m) => Some(m),
+            Err(e) => {
+                debug!("Content Type Parse Error: {e:?}");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    (rel, content_type)
 }

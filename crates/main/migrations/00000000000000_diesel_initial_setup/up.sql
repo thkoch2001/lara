@@ -75,6 +75,7 @@ CREATE TABLE fetch_result (
   -- job_id
 );
 
+-- TODO rename to link_context?
 CREATE TYPE url_context AS ENUM (
   'SEED',
   'IS_SITEMAP',

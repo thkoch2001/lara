@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 /// Logs time until function end to debug log and warns if function took longer than threshold.
 ///
 /// ```
-///     let _ttd = TimeToDrop::new("FUNCTION_NAME", Duration::from_millis(1000));
+/// # use crawl::clock::TimeToDrop;
+/// let _ttd = TimeToDrop::new("FUNCTION_NAME", std::time::Duration::from_millis(1000));
 /// ```
 pub struct TimeToDrop {
     id: String,

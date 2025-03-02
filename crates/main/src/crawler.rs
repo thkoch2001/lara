@@ -16,6 +16,7 @@ use crate::signal_handler::SignalHandler;
 use crate::url_frontier::UrlFrontier;
 use anyhow::Result;
 use crawl::url_util::{is_domain_root, with_path_only};
+use mime::Mime;
 use url::Url;
 
 pub struct Crawler {
@@ -32,6 +33,8 @@ pub struct Crawler {
 #[ExistingTypePath = "crate::db::schema::sql_types::UrlContext"]
 #[DbValueStyle = "SCREAMING_SNAKE_CASE"]
 pub enum Context {
+    // TODO: consistent naming, e.g. FromSitemap, FromFeed
+    // TODO: rename to LinkContext and also in db?
     Seed,
     /// A link pointing to a sitemap, either found in robots.txt or the
     /// default location /sitemap.xml.
@@ -41,8 +44,8 @@ pub enum Context {
     /// A link pointing to a syndication feed (RSS, ATOM), probably found in a
     /// html HEAD LINK element:
     /// `<head><link rel="alternate" type="application/rss+xml" href="..." />`
-    /// A link found in a feed
     FeedLink,
+    /// A link found in a feed
     Feed,
     #[default]
     Other,
@@ -56,10 +59,9 @@ pub struct Inlink {
     /// TODO <https://en.wikipedia.org/wiki/Nofollow>
     /// or PREV/NEXT, however we're only interested in NEXT
     #[allow(dead_code)]
-    pub rel: Option<String>,
+    pub rel: Vec<String>,
     pub context: Context,
-    pub _redirect_count: usize,
-    pub _content_type: Option<String>,
+    pub content_type: Option<Mime>,
 }
 
 pub struct Outlink {
