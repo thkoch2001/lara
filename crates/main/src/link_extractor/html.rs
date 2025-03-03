@@ -42,8 +42,10 @@ impl OutlinksSink {
         }
     }
 
-    fn push_outlink(&self, url: Url, inlink: Inlink) {
-        self.outlinks.borrow_mut().push(Outlink { url, i: inlink });
+    fn maybe_push_outlink(&self, rel: &[String], url: Url, inlink: Inlink) {
+        if link::can_follow(rel) {
+            self.outlinks.borrow_mut().push(Outlink { url, i: inlink });
+        }
     }
 
     fn handle_a(&self, tag: &Tag, href: &str) {
@@ -54,7 +56,8 @@ impl OutlinksSink {
             } else {
                 Context::Other
             };
-            self.push_outlink(
+            self.maybe_push_outlink(
+                &rel,
                 url,
                 Inlink {
                     content_type,
@@ -69,7 +72,8 @@ impl OutlinksSink {
         if let Some(url) = parse_outlink(&self.base_url, href) {
             let (rel, content_type) = get_link_attrs(tag);
             if link::is_feed_link(&rel, &content_type) {
-                self.push_outlink(
+                self.maybe_push_outlink(
+                    &rel,
                     url,
                     Inlink {
                         content_type,

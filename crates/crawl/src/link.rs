@@ -81,3 +81,18 @@ pub fn is_feed_type(m: &MediaTypeBuf) -> bool {
         && (m.suffix() == Some(XML) && (m.subty() == "rss" || m.subty() == ATOM)
             || m.suffix() == Some(JSON) && m.subty() == "feed")
 }
+
+/// see also <https://en.wikipedia.org/wiki/Nofollow>
+///
+/// ```
+/// # use crawl::link::can_follow;
+/// assert!(!can_follow(&vec!["nofollow".to_string()]));
+/// assert!(!can_follow(&vec!["next".to_string(), "ugc".to_string()]));
+/// assert!(!can_follow(&vec!["sponsored".to_string()]));
+/// assert!(can_follow(&vec!["next".to_string()]));
+/// ```
+pub fn can_follow(rels: &[String]) -> bool {
+    !rels
+        .iter()
+        .any(|x| matches!(x.as_str(), "nofollow" | "sponsored" | "ugc"))
+}
