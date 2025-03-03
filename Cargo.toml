@@ -18,5 +18,5 @@ chrono = { version = "*", default-features = false, features = [ "now" ] }
 env_logger = "*"
 http = "*"
 log = "*"
-mime = "*"
+mediatype = "*"
 url = "*"

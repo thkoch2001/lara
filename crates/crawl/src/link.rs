@@ -1,4 +1,5 @@
-use mime::{APPLICATION, JSON, Mime, XML};
+use mediatype::MediaTypeBuf;
+use mediatype::names::{APPLICATION, ATOM, JSON, XML};
 
 /// Parse attribute (e.g. 'rel') with space separated words.
 ///
@@ -29,38 +30,38 @@ pub fn split_words(opt: Option<&str>) -> Vec<String> {
 
 /// ```
 /// # use crawl::link::is_feed_link;
-/// # use mime::Mime;
+/// # use mediatype::MediaTypeBuf as M;
 /// let rels = &vec!["alternate".to_string()];
 /// assert!(is_feed_link(
 ///   rels,
-///   "application/rss+xml".parse().ok()
+///   &"application/rss+xml".parse().ok()
 /// ));
 /// assert!(is_feed_link(
 ///   rels,
-///   "application/atom+xml".parse().ok()
+///   &"application/atom+xml".parse().ok()
 /// ));
 /// assert!(is_feed_link(
 ///   rels,
-///   "application/feed+json".parse().ok()
+///   &"application/feed+json".parse().ok()
 /// ));
 /// assert!(is_feed_link(
 ///   rels,
-///   "Application/Atom+XML".parse().ok()
+///   &"Application/Atom+XML".parse().ok()
 /// ));
 /// assert!(!is_feed_link(
 ///   &vec![],
-///   "application/atom+xml".parse().ok()
+///   &"application/atom+xml".parse().ok()
 /// ));
 /// assert!(!is_feed_link(
 ///   rels,
-///   "application/atom".parse().ok()
+///   &"application/atom".parse().ok()
 /// ));
 /// assert!(!is_feed_link(
 ///   rels,
-///   "text/atom+xml".parse().ok()
+///   &"text/atom+xml".parse().ok()
 /// ));
 /// ```
-pub fn is_feed_link(rels: &[String], content_type: &Option<Mime>) -> bool {
+pub fn is_feed_link(rels: &[String], content_type: &Option<MediaTypeBuf>) -> bool {
     if let Some(m) = content_type {
         return is_feed_type(m) && rels.iter().any(|x| x == "alternate");
     }
@@ -69,14 +70,14 @@ pub fn is_feed_link(rels: &[String], content_type: &Option<Mime>) -> bool {
 
 /// ```
 /// # use crawl::link::is_feed_type;
-/// # use mime::Mime;
-/// assert!(is_feed_type("application/rss+xml".parse().unwrap()));
-/// assert!(is_feed_type("application/atom+xml".parse().unwrap()));
-/// assert!(is_feed_type("application/feed+json".parse().unwrap()));
-/// assert!(!is_feed_type("text/plain".parse().unwrap()));
+/// # use mediatype::MediaTypeBuf as M;
+/// assert!(is_feed_type(&"application/rss+xml".parse().unwrap()));
+/// assert!(is_feed_type(&"application/atom+xml".parse().unwrap()));
+/// assert!(is_feed_type(&"application/feed+json".parse().unwrap()));
+/// assert!(!is_feed_type(&"text/plain".parse().unwrap()));
 /// ```
-pub fn is_feed_type(m: &Mime) -> bool {
-    m.type_() == APPLICATION
-        && (m.suffix() == Some(XML) && (m.subtype() == "rss" || m.subtype() == "atom")
-            || m.suffix() == Some(JSON) && m.subtype() == "feed")
+pub fn is_feed_type(m: &MediaTypeBuf) -> bool {
+    m.ty() == APPLICATION
+        && (m.suffix() == Some(XML) && (m.subty() == "rss" || m.subty() == ATOM)
+            || m.suffix() == Some(JSON) && m.subty() == "feed")
 }

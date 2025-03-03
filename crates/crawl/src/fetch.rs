@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use chrono::prelude::*;
 use http::header::CONTENT_TYPE;
 use http::{HeaderMap, HeaderValue, StatusCode, Version};
-use mime::Mime;
+use mediatype::MediaTypeBuf;
 use std::time::Duration;
 
 pub struct FetchResult {
@@ -19,7 +19,7 @@ impl FetchResult {
         format!("{:?} {}\r\n", self.http_version, self.status)
     }
 
-    pub fn parse_content_type(&self) -> Result<Mime> {
+    pub fn parse_content_type(&self) -> Result<MediaTypeBuf> {
         if let Some(content_type) = self.headers.get(CONTENT_TYPE) {
             Ok(content_type.to_str()?.parse()?)
         } else {

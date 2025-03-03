@@ -16,7 +16,7 @@ use crate::signal_handler::SignalHandler;
 use crate::url_frontier::UrlFrontier;
 use anyhow::Result;
 use crawl::url_util::{is_domain_root, with_path_only};
-use mime::Mime;
+use mediatype::MediaTypeBuf;
 use url::Url;
 
 pub struct Crawler {
@@ -61,7 +61,7 @@ pub struct Inlink {
     #[allow(dead_code)]
     pub rel: Vec<String>,
     pub context: Context,
-    pub content_type: Option<Mime>,
+    pub content_type: Option<MediaTypeBuf>,
 }
 
 pub struct Outlink {

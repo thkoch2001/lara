@@ -14,6 +14,6 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 http = { workspace = true }
 log = { workspace = true }
-mime = { workspace = true }
+mediatype = { workspace = true }
 simple_moving_average = "*"
 url = { workspace = true }

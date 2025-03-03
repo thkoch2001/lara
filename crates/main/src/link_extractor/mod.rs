@@ -9,7 +9,6 @@ use crawl::fetch::FetchResult;
 use feed::FeedExtractor;
 use html::HtmlExtractor;
 use itertools::Itertools;
-use mime::{HTML, TEXT, XML};
 use sitemap::SitemapExtractor;
 use std::any::type_name_of_val;
 use url::Url;
@@ -46,9 +45,9 @@ fn get_inlink(links: &[Inlink]) -> Inlink {
 fn get_extractor(fr: &FetchResult, body: &[u8], inlink: &Inlink) -> Box<dyn Extractor> {
     match fr.parse_content_type() {
         Err(e) => debug!("{e:?}"),
-        Ok(mime) => match (mime.type_(), mime.subtype()) {
-            (TEXT, HTML) => return Box::new(HtmlExtractor),
-            (_, XML) if SitemapExtractor::is(body) => return Box::new(SitemapExtractor),
+        Ok(m) => match (m.ty().as_str(), m.subty().as_str()) {
+            ("text", "html") => return Box::new(HtmlExtractor),
+            (_, "xml") if SitemapExtractor::is(body) => return Box::new(SitemapExtractor),
             _ => (),
         },
     }

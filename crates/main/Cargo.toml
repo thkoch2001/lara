@@ -21,7 +21,7 @@ flate2 = "*"
 html5ever = "*"
 itertools = "*"
 log = { workspace = true }
-mime = { workspace = true }
+mediatype = { workspace = true }
 quick-xml = "*"
 texting_robots = "*"
 ureq = { version = "*", features = ["brotli", "charset", "gzip", "native-tls"]}

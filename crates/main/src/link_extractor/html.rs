@@ -8,7 +8,7 @@ use html5ever::tokenizer::{
     BufferQueue, CharacterTokens, Tag, TagKind, TagToken, Token, TokenSink, TokenSinkResult,
     Tokenizer, TokenizerOpts,
 };
-use mime::Mime;
+use mediatype::MediaTypeBuf;
 use std::cell::RefCell;
 use url::Url;
 
@@ -122,9 +122,10 @@ fn get_attr(tag: &Tag, attr_name: &LocalName) -> Option<String> {
         .map(|a| a.value.to_string())
 }
 
-fn get_link_attrs(tag: &Tag) -> (Vec<String>, Option<Mime>) {
+fn get_link_attrs(tag: &Tag) -> (Vec<String>, Option<MediaTypeBuf>) {
     let rel = link::split_words(get_attr(tag, &local_name!("rel")).as_deref());
-    let content_type: Option<Mime> = if let Some(attr) = get_attr(tag, &local_name!("type")) {
+    let content_type: Option<MediaTypeBuf> = if let Some(attr) = get_attr(tag, &local_name!("type"))
+    {
         match attr.parse() {
             Ok(m) => Some(m),
             Err(e) => {
