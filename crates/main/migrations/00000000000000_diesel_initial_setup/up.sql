@@ -83,7 +83,6 @@ CREATE TYPE url_context AS ENUM (
   'FEED', -- url found in a feed
   'SITEMAP',
   'NEXT', -- https://www.w3.org/TR/2014/REC-html5-20141028/links.html#link-type-next
-  'HTML_A',
   'STYLE',
   'SCRIPT',
   'IMG',

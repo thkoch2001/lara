@@ -42,20 +42,23 @@ impl OutlinksSink {
         }
     }
 
-    fn push_outlink(&self, url: Url, i: Inlink) {
-        self.outlinks.borrow_mut().push(Outlink { url, i });
+    fn push_outlink(&self, url: Url, inlink: Inlink) {
+        self.outlinks.borrow_mut().push(Outlink { url, i: inlink });
     }
 
-    // todo: context of rel="next" should be next
     fn handle_a(&self, tag: &Tag, href: &str) {
         if let Some(url) = parse_outlink(&self.base_url, href) {
             let (rel, content_type) = get_link_attrs(tag);
+            let context = if rel.iter().any(|x| x == "next") {
+                Context::Next
+            } else {
+                Context::Other
+            };
             self.push_outlink(
                 url,
                 Inlink {
-                    rel,
                     content_type,
-                    ..Inlink::default()
+                    context,
                 },
             );
         }
@@ -69,7 +72,6 @@ impl OutlinksSink {
                 self.push_outlink(
                     url,
                     Inlink {
-                        rel,
                         content_type,
                         context: Context::FeedLink,
                     },

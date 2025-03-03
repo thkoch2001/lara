@@ -47,6 +47,7 @@ pub enum Context {
     FeedLink,
     /// A link found in a feed
     Feed,
+    Next,
     #[default]
     Other,
     Img,
@@ -56,12 +57,8 @@ pub enum Context {
 
 #[derive(Default, Clone)]
 pub struct Inlink {
-    /// TODO <https://en.wikipedia.org/wiki/Nofollow>
-    /// or PREV/NEXT, however we're only interested in NEXT
-    #[allow(dead_code)]
-    pub rel: Vec<String>,
-    pub context: Context,
     pub content_type: Option<MediaTypeBuf>,
+    pub context: Context,
 }
 
 pub struct Outlink {
