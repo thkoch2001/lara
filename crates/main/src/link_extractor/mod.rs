@@ -4,11 +4,13 @@
 // * [Mime Sniffing standard](https://mimesniff.spec.whatwg.org)
 
 use crate::crawler::{Context, Inlink, Outlink, UrlItem};
-use anyhow::Result;
+use anyhow::{bail, Result};
 use crawl::fetch::FetchResult;
+use crawl::link;
 use feed::FeedExtractor;
 use html::HtmlExtractor;
 use itertools::Itertools;
+use mediatype::MediaTypeBuf;
 use sitemap::SitemapExtractor;
 use std::any::type_name_of_val;
 use url::Url;
@@ -20,7 +22,8 @@ mod sitemap;
 pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult, body: &[u8]) -> Result<Vec<Outlink>> {
     let inlink = get_inlink(&item.i);
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
-    let extractor = get_extractor(fr, body, &inlink);
+    let content_type = fr.parse_content_type()?;
+    let extractor = get_extractor(&content_type, body, &inlink)?;
     let mut outlinks = extractor.get_outlinks(&String::from_utf8_lossy(body), &item.url)?;
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
@@ -42,22 +45,21 @@ fn get_inlink(links: &[Inlink]) -> Inlink {
     links[0].clone()
 }
 
-fn get_extractor(fr: &FetchResult, body: &[u8], inlink: &Inlink) -> Box<dyn Extractor> {
-    match fr.parse_content_type() {
-        Err(e) => debug!("{e:?}"),
-        Ok(m) => match (m.ty().as_str(), m.subty().as_str()) {
-            ("text", "html") => return Box::new(HtmlExtractor),
-            (_, "xml") if SitemapExtractor::is(body) => return Box::new(SitemapExtractor),
-            _ => (),
-        },
+fn get_extractor(ct: &MediaTypeBuf, body: &[u8], inlink: &Inlink) -> Result<Box<dyn Extractor>> {
+    match (ct.ty().as_str(), ct.subty().as_str()) {
+        ("text", "html") => return Ok(Box::new(HtmlExtractor)),
+        (_, "xml") if SitemapExtractor::is(body) => return Ok(Box::new(SitemapExtractor)),
+        (_, "xml") => return Ok(Box::new(FeedExtractor)),
+        ("application", _) if link::is_feed_type(ct) => return Ok(Box::new(FeedExtractor)),
+        _ => ()
     }
 
-    match inlink.context {
+    Ok(match inlink.context {
         Context::Other => Box::new(HtmlExtractor),
         Context::Sitemap => Box::new(SitemapExtractor),
         Context::Feed => Box::new(FeedExtractor),
-        _ => todo!(),
-    }
+        _ => bail!("No extractor for {ct:?}"),
+    })
 }
 
 pub trait Extractor {
