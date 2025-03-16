@@ -1,4 +1,4 @@
-use crate::crawler::{Context, Inlink, Outlink};
+use crate::crawler::{Context, Outlink};
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 use std::collections::HashMap;
@@ -113,13 +113,7 @@ fn entry_to_outlink(entry: &HashMap<String, String>, context: Context) -> Option
     // TODO also use the other data, especially lastmod!
     // https://doc.rust-lang.org/std/primitive.f32.html#method.clamp for sanitizing sitemap provided priority values
 
-    Some(Outlink {
-        url,
-        i: Inlink {
-            context,
-            ..Inlink::default()
-        },
-    })
+    Some(Outlink { url, context })
 }
 
 #[cfg(test)]

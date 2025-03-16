@@ -1,4 +1,4 @@
-use crate::crawler::{Context, Inlink, Outlink};
+use crate::crawler::{Context, Outlink};
 use anyhow::Result;
 use crawl::link;
 use crawl::url_util::parse_outlink;
@@ -42,28 +42,21 @@ impl OutlinksSink {
         }
     }
 
-    fn maybe_push_outlink(&self, rel: &[String], url: Url, inlink: Inlink) {
+    fn maybe_push_outlink(&self, rel: &[String], url: Url, context: Context) {
         if link::can_follow(rel) {
-            self.outlinks.borrow_mut().push(Outlink { url, i: inlink });
+            self.outlinks.borrow_mut().push(Outlink { url, context });
         }
     }
 
     fn handle_a(&self, tag: &Tag, href: &str) {
         if let Some(url) = parse_outlink(&self.base_url, href) {
-            let (rel, content_type) = get_link_attrs(tag);
+            let (rel, _) = get_link_attrs(tag);
             let context = if rel.iter().any(|x| x == "next") {
                 Context::Next
             } else {
                 Context::Other
             };
-            self.maybe_push_outlink(
-                &rel,
-                url,
-                Inlink {
-                    content_type,
-                    context,
-                },
-            );
+            self.maybe_push_outlink(&rel, url, context);
         }
     }
 
@@ -72,14 +65,7 @@ impl OutlinksSink {
         if let Some(url) = parse_outlink(&self.base_url, href) {
             let (rel, content_type) = get_link_attrs(tag);
             if link::is_feed_link(&rel, &content_type) {
-                self.maybe_push_outlink(
-                    &rel,
-                    url,
-                    Inlink {
-                        content_type,
-                        context: Context::FeedLink,
-                    },
-                );
+                self.maybe_push_outlink(&rel, url, Context::FeedLink);
             }
         }
     }

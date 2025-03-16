@@ -16,7 +16,6 @@ use crate::signal_handler::SignalHandler;
 use crate::url_frontier::UrlFrontier;
 use anyhow::Result;
 use crawl::url_util::{is_domain_root, with_path_only};
-use mediatype::MediaTypeBuf;
 use url::Url;
 
 pub struct Crawler {
@@ -55,20 +54,9 @@ pub enum Context {
     Script,
 }
 
-#[derive(Default, Clone)]
-pub struct Inlink {
-    pub content_type: Option<MediaTypeBuf>,
-    pub context: Context,
-}
-
 pub struct Outlink {
     pub url: Url,
-    pub i: Inlink,
-}
-
-pub struct UrlItem {
-    pub url: Url,
-    pub i: Vec<Inlink>,
+    pub context: Context,
 }
 
 impl Crawler {
@@ -84,10 +72,9 @@ impl Crawler {
 
     pub fn run(&mut self) -> Result<()> {
         let grace = self.signal_handler.grace();
-        while let Some(item) = self.url_frontier.get_item()? {
-            let url = &item.url;
+        while let Some(url) = self.url_frontier.get_url()? {
             debug!("Crawl: '{url}'");
-            match self.robotstxt.check(url, &mut self.fetcher)? {
+            match self.robotstxt.check(&url, &mut self.fetcher)? {
                 CheckResult::Allowed => (),
                 CheckResult::Disallowed => {
                     info!("Crawling of {url} forbidden by robots.txt");
@@ -100,29 +87,23 @@ impl Crawler {
                 }
             }
 
-            let (fr, body) = self.fetcher.fetch(&item.url.clone())?;
-            let mut outlinks = extract_outlinks(&item, &fr, &body)?;
-            if is_domain_root(url) {
+            let (fr, body) = self.fetcher.fetch(&url.clone())?;
+            let mut outlinks = extract_outlinks(&url, &fr, &body)?;
+            if is_domain_root(&url) {
                 debug!("Adding sitemap outlinks for domain root: {url}");
                 let mut sitemap_outlinks: Vec<Outlink> = self
                     .robotstxt
-                    .get_sitemaps(url, &mut self.fetcher)?
+                    .get_sitemaps(&url, &mut self.fetcher)?
                     .into_iter()
                     .map(|url| Outlink {
                         url,
-                        i: Inlink {
-                            context: Context::Sitemap,
-                            ..Inlink::default()
-                        },
+                        context: Context::Sitemap,
                     })
                     .collect();
                 if sitemap_outlinks.is_empty() {
                     sitemap_outlinks = vec![Outlink {
-                        url: with_path_only(url, "sitemap.xml"),
-                        i: Inlink {
-                            context: Context::Sitemap,
-                            ..Inlink::default()
-                        },
+                        url: with_path_only(&url, "sitemap.xml"),
+                        context: Context::Sitemap,
                     }];
                 }
                 outlinks.append(&mut sitemap_outlinks);

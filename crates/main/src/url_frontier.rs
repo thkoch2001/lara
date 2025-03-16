@@ -15,7 +15,7 @@ use crawl::fetch::FetchResult;
 use diesel::pg::PgConnection;
 use url::Url;
 
-use crate::crawler::{Outlink, UrlItem};
+use crate::crawler::Outlink;
 
 pub struct UrlFrontier {
     conn: PgConnection,
@@ -48,19 +48,15 @@ impl UrlFrontier {
         Ok(())
     }
 
-    pub fn get_item(&mut self) -> Result<Option<UrlItem>> {
+    pub fn get_url(&mut self) -> Result<Option<Url>> {
         if self.urls.is_empty() {
             self.fill_urls()?;
         }
-        let Some((id, url_item)) = self
-            .urls
-            .pop()
-            .map(|(id, url)| (id, UrlItem { i: vec![], url }))
-        else {
+        let Some((id, url)) = self.urls.pop() else {
             return Ok(None);
         };
         self.current_url_id = id;
-        Ok(Some(url_item))
+        Ok(Some(url))
     }
 
     pub fn put_outlinks(&mut self, fr: &FetchResult, outlinks: &[Outlink]) -> Result<()> {

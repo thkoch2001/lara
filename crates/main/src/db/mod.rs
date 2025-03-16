@@ -80,7 +80,7 @@ fn insert_fr_with_urls(
             .bind::<Text, _>(url.domain().unwrap().to_string())
             .bind::<Text, _>(url.path()[1..].to_string())
             .bind::<Nullable<Text>, _>(url.query().map(String::from))
-            .bind::<self::schema::sql_types::UrlContext, _>(&outlink.i.context);
+            .bind::<self::schema::sql_types::UrlContext, _>(&outlink.context);
     }
 
     q = q

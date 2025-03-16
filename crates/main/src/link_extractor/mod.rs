@@ -3,8 +3,8 @@
 // * MDN: [Mime Types](https://developer.mozilla.org/en-US/docs/Web/HTTP/MIME_types)
 // * [Mime Sniffing standard](https://mimesniff.spec.whatwg.org)
 
-use crate::crawler::{Context, Inlink, Outlink, UrlItem};
-use anyhow::{bail, Result};
+use crate::crawler::Outlink;
+use anyhow::{Result, bail};
 use crawl::fetch::FetchResult;
 use crawl::link;
 use feed::FeedExtractor;
@@ -19,12 +19,11 @@ mod feed;
 mod html;
 mod sitemap;
 
-pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult, body: &[u8]) -> Result<Vec<Outlink>> {
-    let inlink = get_inlink(&item.i);
+pub fn extract_outlinks(url: &Url, fr: &FetchResult, body: &[u8]) -> Result<Vec<Outlink>> {
     // todo: also extract links from headers: Feeds, pagination next, script, style, ...
     let content_type = fr.parse_content_type()?;
-    let extractor = get_extractor(&content_type, body, &inlink)?;
-    let mut outlinks = extractor.get_outlinks(&String::from_utf8_lossy(body), &item.url)?;
+    let extractor = get_extractor(&content_type, body)?;
+    let mut outlinks = extractor.get_outlinks(&String::from_utf8_lossy(body), url)?;
     // Doesn't seem worthwile to look for links in HTTP header
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
     outlinks = outlinks.into_iter().unique_by(|o| o.url.clone()).collect();
@@ -32,32 +31,17 @@ pub fn extract_outlinks(item: &UrlItem, fr: &FetchResult, body: &[u8]) -> Result
         "{}: {} outlinks from {}",
         extractor.name(),
         outlinks.len(),
-        &item.url
+        &url
     );
     Ok(outlinks)
 }
 
-fn get_inlink(links: &[Inlink]) -> Inlink {
-    // todo: get the best inlink, not the first
-    if links.is_empty() {
-        return Inlink::default();
-    }
-    links[0].clone()
-}
-
-fn get_extractor(ct: &MediaTypeBuf, body: &[u8], inlink: &Inlink) -> Result<Box<dyn Extractor>> {
-    match (ct.ty().as_str(), ct.subty().as_str()) {
-        ("text", "html") => return Ok(Box::new(HtmlExtractor)),
-        (_, "xml") if SitemapExtractor::is(body) => return Ok(Box::new(SitemapExtractor)),
-        (_, "xml") => return Ok(Box::new(FeedExtractor)),
-        ("application", _) if link::is_feed_type(ct) => return Ok(Box::new(FeedExtractor)),
-        _ => ()
-    }
-
-    Ok(match inlink.context {
-        Context::Other => Box::new(HtmlExtractor),
-        Context::Sitemap => Box::new(SitemapExtractor),
-        Context::Feed => Box::new(FeedExtractor),
+fn get_extractor(ct: &MediaTypeBuf, body: &[u8]) -> Result<Box<dyn Extractor>> {
+    Ok(match (ct.ty().as_str(), ct.subty().as_str()) {
+        ("text", "html") => Box::new(HtmlExtractor),
+        (_, "xml") if SitemapExtractor::is(body) => Box::new(SitemapExtractor),
+        (_, "xml") => Box::new(FeedExtractor),
+        ("application", _) if link::is_feed_type(ct) => Box::new(FeedExtractor),
         _ => bail!("No extractor for {ct:?}"),
     })
 }
