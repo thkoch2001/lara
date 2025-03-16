@@ -17,6 +17,7 @@ crawl = { path = "../crawl" }
 diesel = { version = "*", features = ["chrono", "postgres", "without-deprecated"], default-features = false }
 diesel-derive-enum = { version = "*", features = ["postgres"] }
 env_logger = { version = "*" }
+feed-rs = "*"
 flate2 = "*"
 html5ever = "*"
 itertools = "*"
