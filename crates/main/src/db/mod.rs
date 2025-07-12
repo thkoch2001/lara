@@ -1,5 +1,5 @@
 use crate::crawler::Outlink;
-use crate::env_config::DB_URL;
+use crate::env_config::DATABASE_URL;
 use anyhow::Result;
 use crawl::clock::TimeToDrop;
 use crawl::fetch::FetchResult;
@@ -111,5 +111,5 @@ pub fn select_crawl_urls(
 }
 
 pub fn init_conn() -> Result<PgConnection> {
-    Ok(PgConnection::establish(&DB_URL.get())?)
+    Ok(PgConnection::establish(&DATABASE_URL.get())?)
 }

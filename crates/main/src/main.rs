@@ -29,7 +29,7 @@ use std::thread;
 env_vars![
     ARCHIVE_DIR
     BOT_NAME
-    DB_URL
+    DATABASE_URL
     FROM // https://httpwg.org/specs/rfc9110.html#field.from
 ];
 
