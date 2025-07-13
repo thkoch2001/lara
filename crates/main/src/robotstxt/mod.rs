@@ -1,3 +1,4 @@
+use crate::crawler::Outlink;
 use crate::fetcher::Fetcher;
 use anyhow::Result;
 use cache::{AccessResult as AR, Cache as RobotsTxtCache};
@@ -44,25 +45,29 @@ impl RobotsTxt {
         Ok(sitemap_urls)
     }
 
-    /* TODO: Do we want to filter outlinks and fetch robots.txt during crawl?
+    // TODO: Do we want to filter outlinks and fetch robots.txt during crawl?
     pub fn filter_outlinks(
         &mut self,
         outlinks: Vec<Outlink>,
+        authority: &str,
         fetcher: &mut Fetcher,
     ) -> Vec<Outlink> {
         outlinks
             .into_iter()
-            .filter(|o| match self.check(&o.url, fetcher) {
-                Ok(CheckResult::Allowed) => true,
-                Err(e) => {
-                    info!("Error while filtering outlink {} {e:?}", &o.url);
-                    false
-                }
-                // todo maybe return true if robotstxt could not be retrieved right now?
-                _ => false,
+            .filter(|o| {
+                o.url.authority() != authority
+                    || match self.check(&o.url, fetcher) {
+                        Ok(CheckResult::Allowed) => true,
+                        Err(e) => {
+                            info!("Error while filtering outlink {} {e:?}", &o.url);
+                            false
+                        }
+                        // todo maybe return true if robotstxt could not be retrieved right now?
+                        _ => false,
+                    }
             })
             .collect()
-    }*/
+    }
 
     pub fn check(&mut self, url: &Url, fetcher: &mut Fetcher) -> Result<CheckResult> {
         let ar = self.get_or_fetch_robotstxt(url, fetcher)?;

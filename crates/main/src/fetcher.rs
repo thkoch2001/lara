@@ -167,7 +167,7 @@ impl Fetcher {
         // TODO somehow get the size of the compressed file?
         // file.metadata().unwrap().len() encoder has get_ref()
         // Optimization: check metadata only after at least the threshold of uncompressed bytes has been written
-        if self.archive_file_bytes_written > 1024 * 1024 {
+        if self.archive_file_bytes_written > 1024 * 1024 * 1024 {
             let () = self.close_archive_file()?;
         }
 

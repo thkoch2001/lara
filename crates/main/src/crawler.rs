@@ -88,7 +88,7 @@ impl Crawler {
             }
 
             let (fr, body) = self.fetcher.fetch(&url.clone())?;
-            let mut outlinks = extract_outlinks(&url, &fr, &body)?;
+            let mut outlinks = extract_outlinks(&url, &fr, &body);
             if is_domain_root(&url) {
                 debug!("Adding sitemap outlinks for domain root: {url}");
                 let mut sitemap_outlinks: Vec<Outlink> = self
@@ -108,9 +108,10 @@ impl Crawler {
                 }
                 outlinks.append(&mut sitemap_outlinks);
             }
-            // TODO what to do with domains not crawled right now?
-            // TODO this will probably often kick the currently crawled domain out of the robotstxt cache?
-            // outlinks = self.robotstxt.filter_outlinks(outlinks, &mut self.fetcher);
+            // filter outlinks by robots.txt, only for currently crawled domain.
+            outlinks = self
+                .robotstxt
+                .filter_outlinks(outlinks, url.authority(), &mut self.fetcher);
 
             self.url_frontier.put_outlinks(&fr, &outlinks)?;
 

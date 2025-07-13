@@ -57,7 +57,7 @@ CREATE TABLE domain (
 -- TODO (long term) partition by domain? https://www.postgresql.org/docs/current/ddl-partitioning.html
 CREATE TABLE url (
   url_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  domain_id INTEGER NOT NULL REFERENCES domain,
+  domain_id INTEGER NOT NULL REFERENCES domain ON DELETE CASCADE,
   path TEXT DEFAULT '' NOT NULL,
   query TEXT,
   crawl_depth SMALLINT DEFAULT 0,
@@ -69,7 +69,7 @@ CREATE TABLE url (
 
 CREATE TABLE fetch_result (
   fetch_result_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  url_id INTEGER NOT NULL REFERENCES url,
+  url_id INTEGER NOT NULL REFERENCES url ON DELETE CASCADE,
   time TIMESTAMPTZ NOT NULL,
   http_status SMALLINT NOT NULL
   -- job_id
@@ -90,8 +90,8 @@ CREATE TYPE url_context AS ENUM (
 );
 
 CREATE TABLE inlink (
-  fetch_result_id INTEGER REFERENCES fetch_result,
-  url_id INTEGER NOT NULL REFERENCES url,
+  fetch_result_id INTEGER REFERENCES fetch_result ON DELETE CASCADE,
+  url_id INTEGER NOT NULL REFERENCES url ON DELETE CASCADE,
   context url_context DEFAULT 'SEED' NOT NULL,
   PRIMARY KEY (fetch_result_id, url_id)
 );
