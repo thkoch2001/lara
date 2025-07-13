@@ -44,11 +44,12 @@ pkgs.mkShell rec {
     export ARCHIVE_DIR=$DATADIR/archive
     mkdir -p $ARCHIVE_DIR
 
-    # used by lara and postgres initdb, pg_ctl
-    export DATABASE_URL=postgresql:///lara?application_name=lara\&host=$PGDATA
-
     # used by postgres client cli
     export PGHOST=$PGDATA
+    export PGDATABASE=lara
+
+    # used by lara and postgres initdb, pg_ctl
+    export DATABASE_URL=postgresql:///''${PGDATABASE}?application_name=lara\&host=$PGDATA
 
     alias dev_pg_start='pg_ctl -l $PGDATA/logfile -o "--unix_socket_directories=$PGDATA" start'
     alias dev_pg_status='pg_ctl status'
