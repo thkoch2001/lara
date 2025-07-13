@@ -50,10 +50,6 @@ pkgs.mkShell rec {
 
     # used by lara and postgres initdb, pg_ctl
     export DATABASE_URL=postgresql:///''${PGDATABASE}?application_name=lara\&host=$PGDATA
-
-    alias dev_pg_start='pg_ctl -l $PGDATA/logfile -o "--unix_socket_directories=$PGDATA" start'
-    alias dev_pg_status='pg_ctl status'
-    alias dev_pg_stop='pg_ctl stop'
   '';
   # Add precompiled library to rustc search path
   RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [

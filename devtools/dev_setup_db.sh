@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 initdb
-pg_ctl -l $PGDATA/logfile -o "--unix_socket_directories=$PGDATA" start
+dev_start_db.sh
 createdb lara
 diesel migration --migration-dir crates/main/migrations run
