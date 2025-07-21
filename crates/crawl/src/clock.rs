@@ -60,6 +60,10 @@ pub fn wait(until: DateTime<Utc>) {
     }
 }
 
+pub fn format_for_filename(dt: DateTime<Utc>) -> String {
+    dt.format("%Y%m%dT%H%M%SZ").to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

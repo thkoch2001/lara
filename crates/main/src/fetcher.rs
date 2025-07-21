@@ -4,6 +4,7 @@
 use crate::env_config::{ARCHIVE_DIR, FROM};
 use anyhow::Result;
 use chrono::prelude::*;
+use crawl::clock;
 use crawl::fetch::FetchResult;
 use crawl::polite::Politeness;
 use flate2::{Compression, write::GzEncoder};
@@ -149,8 +150,9 @@ impl Fetcher {
     fn write_to_archive(&mut self, url: &Url, fr: &FetchResult, body: &[u8]) -> Result<()> {
         if self.archive_file.is_none() {
             let path = format!(
-                "{}/archive_{:03}.warc.gz",
+                "{}/lara-{}-{:03}.warc.gz",
                 self.archive_dir.display(),
+                clock::format_for_filename(Utc::now()),
                 self.archive_file_cnt
             );
             debug!("Starting new warc file: {path}");

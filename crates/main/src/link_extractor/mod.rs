@@ -39,7 +39,7 @@ pub fn extract_outlinks(url: &Url, fr: &FetchResult, body: &[u8]) -> Vec<Outlink
     match result {
         Ok(outlinks) => outlinks,
         Err(e) => {
-            debug!("{}", e);
+            error!("{}", e);
             Vec::new()
         }
     }
